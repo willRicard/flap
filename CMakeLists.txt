@@ -12,7 +12,11 @@ find_path(GLFW_INCLUDE_DIR GLFW/glfw3.h)
 find_path(GRAPHENE_INCLUDE_DIR graphene.h)
 find_path(GRAPHENE_CONFIG_INCLUDE_DIR graphene-config.h)
 
-add_executable(flap main.c window.c shader.c rect.c)
+add_executable(flap
+  main.c
+  gl/window_gl.c
+  gl/shader_gl.c
+  gl/rect_gl.c)
 
 target_include_directories(flap PUBLIC
   ${OPENGL_INCLUDE_DIRS}
