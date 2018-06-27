@@ -69,7 +69,11 @@ int flap_window_thrust(flap_Window *window) {
   return (glfwGetKey(window->window, GLFW_KEY_SPACE) == GLFW_PRESS);
 }
 
-void flap_window_update(flap_Window *window) { glfwPollEvents(); }
+void flap_window_update(flap_Window *window) {
+  glClearColor(0.53f, 0.81f, 0.92f, 1.f);
+  glClear(GL_COLOR_BUFFER_BIT);
+  glfwPollEvents();
+}
 
 void flap_window_render(flap_Window *window) {
   glfwSwapBuffers(window->window);
