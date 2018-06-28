@@ -19,6 +19,7 @@ add_executable(flap
   gl/rect_gl.c)
 
 target_include_directories(flap PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}
   ${OPENGL_INCLUDE_DIRS}
   ${GLEW_INCLUDE_DIR}
   ${GLFW_INCLUDE_DIR}
