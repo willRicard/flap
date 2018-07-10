@@ -8,49 +8,56 @@
 #include "flap.h"
 #include "shader.h"
 
-static const char *vertex_shader_source =
-    GLSL(in vec4 pos; in vec4 size; in vec4 color;
+// clang-format off
+static const char *vertex_shader_source = GLSL(
+in vec4 pos;
+in vec4 size;
+in vec4 color;
 
-         out vec2 geom_size; out vec3 geom_color;
+out vec2 geom_size;
+out vec3 geom_color;
 
-         void main() {
-           gl_Position = vec4(pos.xy, 0.0, 1.0);
-           geom_size = size.xy;
-           geom_color = color.xyz;
-         });
+void main() {
+	gl_Position = vec4(pos.xy, 0.0, 1.0);
+	geom_size = size.xy;
+	geom_color = color.xyz;
+});
 
-static const char *fragment_shader_source =
-    GLSL(in vec3 frag_color; out vec4 out_color;
+static const char *fragment_shader_source = GLSL(
+in vec3 frag_color;
+out vec4 out_color;
 
-         void main() {
-           // out_color = vec4(pow(frag_color, vec3(1/2.2)), 1.f);
-           out_color = vec4(frag_color, 1.f);
-         });
+void main() {
+	out_color = vec4(frag_color, 1.f);
+});
 
 static const char *geometry_shader_source = GLSL(
-    layout(points) in; layout(triangle_strip, max_vertices = 4) out;
+layout(points) in;
+layout(triangle_strip, max_vertices = 4) out;
 
-    in vec2 geom_size[]; in vec3 geom_color[];
+in vec2 geom_size[];
+in vec3 geom_color[];
 
-    out vec3 frag_color;
+out vec3 frag_color;
 
-    void main() {
-      frag_color = geom_color[0];
+void main() {
+	frag_color = geom_color[0];
 
-      gl_Position = gl_in[0].gl_Position;
-      EmitVertex();
+	gl_Position = gl_in[0].gl_Position;
+	EmitVertex();
 
-      gl_Position = gl_in[0].gl_Position + vec4(geom_size[0].x, 0.0, 0.0, 0.0);
-      EmitVertex();
+	gl_Position = gl_in[0].gl_Position + vec4(geom_size[0].x, 0.0, 0.0, 0.0);
+	EmitVertex();
 
-      gl_Position = gl_in[0].gl_Position + vec4(0.0, geom_size[0].y, 0.0, 0.0);
-      EmitVertex();
+	gl_Position = gl_in[0].gl_Position + vec4(0.0, geom_size[0].y, 0.0, 0.0);
+	EmitVertex();
 
-      gl_Position = gl_in[0].gl_Position + vec4(geom_size[0], 0.0, 0.0);
-      EmitVertex();
+	gl_Position = gl_in[0].gl_Position + vec4(geom_size[0], 0.0, 0.0);
+	EmitVertex();
 
-      EndPrimitive();
-    });
+	EndPrimitive();
+});
+// clang-format on
 
 static flap_Shader *shader = NULL;
 static GLuint vao = 0, vbo = 0, count = 0;
