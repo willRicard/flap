@@ -2,7 +2,7 @@
 #define FLAP_RECT_H_
 
 typedef struct flap_Rect {
-  float vertices[8];
+  float vertices[12];
 } flap_Rect;
 
 void flap_rect_init();

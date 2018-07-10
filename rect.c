@@ -19,7 +19,7 @@ out vec3 frag_color;
                                                
 void main() {
 	gl_Position = vec4(in_pos, 0.0, 1.0);
-    frag_color = color;
+  frag_color = color;
 });
 
 static const char *fragment_shader_source = GLSL(
@@ -68,13 +68,9 @@ flap_Rect *flap_rect_new() {
   return rect;
 }
 
-float flap_rect_get_x(flap_Rect *rect) {
-  return rect->vertices[0];
-}
+float flap_rect_get_x(flap_Rect *rect) { return rect->vertices[0]; }
 
-float flap_rect_get_y(flap_Rect *rect) {
-  return rect->vertices[1];
-}
+float flap_rect_get_y(flap_Rect *rect) { return rect->vertices[1]; }
 
 float flap_rect_get_width(flap_Rect *rect) {
   return rect->vertices[2] - rect->vertices[0];
@@ -90,6 +86,8 @@ void flap_rect_set_x(flap_Rect *rect, float x) {
   rect->vertices[2] += dx;
   rect->vertices[4] += dx;
   rect->vertices[6] += dx;
+  rect->vertices[8] += dx;
+  rect->vertices[10] += dx;
 }
 
 void flap_rect_set_y(flap_Rect *rect, float y) {
@@ -98,6 +96,8 @@ void flap_rect_set_y(flap_Rect *rect, float y) {
   rect->vertices[3] += dy;
   rect->vertices[5] += dy;
   rect->vertices[7] += dy;
+  rect->vertices[9] += dy;
+  rect->vertices[11] += dy;
 }
 
 void flap_rect_set_position(flap_Rect *rect, float x, float y) {
@@ -112,12 +112,14 @@ void flap_rect_move(flap_Rect *rect, float x, float y) {
 
 void flap_rect_set_width(flap_Rect *rect, float width) {
   rect->vertices[2] = rect->vertices[0] + width;
-  rect->vertices[6] = rect->vertices[0] + width;
+  rect->vertices[8] = rect->vertices[0] + width;
+  rect->vertices[10] = rect->vertices[0] + width;
 }
 
 void flap_rect_set_height(flap_Rect *rect, float height) {
   rect->vertices[5] = rect->vertices[1] + height;
   rect->vertices[7] = rect->vertices[1] + height;
+  rect->vertices[11] = rect->vertices[1] + height;
 }
 
 void flap_rect_set_size(flap_Rect *rect, float width, float height) {
@@ -138,12 +140,9 @@ void flap_rect_draw() {
 
   glUniform3fv(color_location, 1, FLAP_BIRD_COLOR);
 
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-  
+  glDrawArrays(GL_TRIANGLES, 0, 6);
 
   glUniform3fv(color_location, 1, FLAP_PIPE_COLOR);
 
-  for (int i = 1; i < 8; i++) {
-    glDrawArrays(GL_TRIANGLE_STRIP, 4 * i, 4);
-  }
+  glDrawArrays(GL_TRIANGLES, 6, FLAP_NUM_PIPES * 6);
 }
