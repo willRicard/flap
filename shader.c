@@ -4,16 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <GL/glew.h>
-
 #include "flap.h"
-
-struct flap_Shader {
-  GLuint vertex_shader;
-  GLuint fragment_shader;
-  GLuint geometry_shader;
-  GLuint program;
-};
 
 static void compile_shader(GLuint shader, const char *source) {
   size_t len = strlen(source);
@@ -49,21 +40,17 @@ static void compile_shader(GLuint shader, const char *source) {
 }
 
 flap_Shader *flap_shader_new(const char *vertex_shader_source,
-                             const char *fragment_shader_source,
-                             const char *geometry_shader_source) {
+                             const char *fragment_shader_source) {
   flap_Shader *shader = (flap_Shader *)malloc(sizeof(flap_Shader));
   shader->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
   shader->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-  shader->geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
   shader->program = glCreateProgram();
 
   compile_shader(shader->vertex_shader, vertex_shader_source);
   compile_shader(shader->fragment_shader, fragment_shader_source);
-  compile_shader(shader->geometry_shader, geometry_shader_source);
 
   glAttachShader(shader->program, shader->vertex_shader);
   glAttachShader(shader->program, shader->fragment_shader);
-  glAttachShader(shader->program, shader->geometry_shader);
 
   glLinkProgram(shader->program);
 
@@ -98,9 +85,6 @@ flap_Shader *flap_shader_new(const char *vertex_shader_source,
 void flap_shader_free(flap_Shader *shader) {
   glDeleteShader(shader->vertex_shader);
   glDeleteShader(shader->fragment_shader);
-  glDeleteShader(shader->geometry_shader);
   glDeleteProgram(shader->program);
   free(shader);
 }
-
-void flap_shader_use(flap_Shader *shader) { glUseProgram(shader->program); }
