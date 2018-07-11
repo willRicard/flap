@@ -41,21 +41,8 @@ int main(int argc, char **argv) {
 
   float accel_y = 0.0f;
 
-  unsigned long num_frames = 0;
-
-  clock_t start_time = clock();
-
   int running = 1;
   while (running) {
-    num_frames++;
-    clock_t now = clock();
-    if (now - start_time > 1000000) {
-      printf("OK\n");
-      printf("Current ms/frame: %f\n", 1000.0 / (double)(num_frames));
-      num_frames = 0;
-      start_time = now;
-    }
-
     running = !flap_window_should_close(window);
 
     flap_window_update(window);
