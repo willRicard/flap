@@ -16,20 +16,21 @@ static void compile_shader(GLuint shader, const char *source) {
   glGetShaderiv(shader, GL_COMPILE_STATUS, &err);
 
   if (err != GL_TRUE) {
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &err);
+    GLint err_size;
+    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &err_size);
     if (err == 0) {
       fputs("No info log was provided.", stderr);
       exit(1);
     }
 
     char *buf = NULL;
-    buf = (char *)malloc(err * sizeof(char));
+    buf = (char *)malloc(err_size * sizeof(char));
     if (buf == NULL) {
       fputs("Memory allocation failed!", stderr);
       exit(1);
     }
 
-    glGetShaderInfoLog(shader, err, &err, buf);
+    glGetShaderInfoLog(shader, err_size, &err_size, buf);
 
     puts(buf);
 

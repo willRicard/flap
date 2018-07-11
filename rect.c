@@ -72,7 +72,7 @@ flap_Rect *flap_rect_new() {
   indices[count * 6 + 4] = base_index + 1;
   indices[count * 6 + 5] = base_index + 3;
 
-  count++;
+  ++count;
 
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * count * sizeof(GLubyte), indices,
                GL_STATIC_DRAW);
