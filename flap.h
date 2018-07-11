@@ -16,8 +16,7 @@
 #define FLAP_PIPE_WIDTH 0.12f
 #define FLAP_PIPE_MIN_HEIGHT 0.25f
 #define FLAP_PIPE_MAX_HEIGHT 1.0f
-//#define FLAP_PIPE_OPENING 0.24f
-#define FLAP_PIPE_OPENING 0.64f
+#define FLAP_PIPE_OPENING 0.34f
 #define FLAP_PIPE_STEP 0.5f
 
 #define GLSL(src) "#version 330 core\n" #src

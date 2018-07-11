@@ -21,6 +21,9 @@ float flap_rect_get_width(flap_Rect *rect);
 float flap_rect_get_height(flap_Rect *rect);
 
 
+int flap_rect_intersect(flap_Rect *r1, flap_Rect *r2);
+
+
 void flap_rect_set_x(flap_Rect *rect, float x);
 
 void flap_rect_set_y(flap_Rect *rect, float y);
@@ -37,7 +40,5 @@ void flap_rect_set_size(flap_Rect *rect, float width, float height);
 
 
 void flap_rect_draw();
-
-int flap_rect_intersect(flap_Rect *r1, flap_Rect *r2);
 
 #endif // FLAP_RECT_H_

@@ -99,6 +99,20 @@ float flap_rect_get_height(flap_Rect *rect) {
   return rect->vertices[5] - rect->vertices[1];
 }
 
+int flap_rect_intersect(flap_Rect *r1, flap_Rect *r2) {
+  float r1_x = flap_rect_get_x(r1);
+  float r1_y = flap_rect_get_y(r1);
+  float r1_w = flap_rect_get_width(r1);
+  float r1_h = flap_rect_get_height(r1);
+
+  float r2_x = flap_rect_get_x(r2);
+  float r2_y = flap_rect_get_y(r2);
+  float r2_w = flap_rect_get_width(r2);
+  float r2_h = flap_rect_get_height(r2);
+
+  return (r1_x < r2_x + r2_w && r2_x < r1_x + r1_w && r1_y < r2_y + r2_h && r2_y < r1_y + r1_h);
+}
+
 void flap_rect_set_x(flap_Rect *rect, float x) {
   float dx = x - rect->vertices[0];
   rect->vertices[0] += dx;

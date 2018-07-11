@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
 
   flap_Rect *pipes[8];
   for (int i = 0; i < FLAP_NUM_PIPES; i += 2) {
-    float x = -1.0 + i * FLAP_PIPE_STEP;
+    float x = i * FLAP_PIPE_STEP;
     float h = FLAP_PIPE_MIN_HEIGHT +
               ((float)rand()) / ((float)RAND_MAX) *
                   (FLAP_PIPE_MAX_HEIGHT - FLAP_PIPE_MIN_HEIGHT);
@@ -36,15 +36,26 @@ int main(int argc, char **argv) {
 
     pipes[i + 1] = flap_rect_new();
     flap_rect_set_position(pipes[i + 1], x, -1.0f + h + FLAP_PIPE_OPENING);
-    flap_rect_set_size(pipes[i + 1], FLAP_PIPE_WIDTH, 2.0f - h - 0.32f);
+    flap_rect_set_size(pipes[i + 1], FLAP_PIPE_WIDTH, 2.0f - h);
   }
 
   float accel_y = 0.0f;
 
   unsigned long num_frames = 0;
 
+  clock_t start_time = clock();
+
   int running = 1;
   while (running) {
+    num_frames++;
+    clock_t now = clock();
+    if (now - start_time > 1000000) {
+      printf("OK\n");
+      printf("Current ms/frame: %f\n", 1000.0 / (double)(num_frames));
+      num_frames = 0;
+      start_time = now;
+    }
+
     running = !flap_window_should_close(window);
 
     flap_window_update(window);
@@ -66,19 +77,13 @@ int main(int argc, char **argv) {
         flap_rect_move(pipes[i], FLAP_SCROLL_SPEED, 0);
         flap_rect_move(pipes[i + 1], FLAP_SCROLL_SPEED, 0);
 
-        float pipe_x = flap_rect_get_x(pipes[i]),
-              pipe_y = flap_rect_get_y(pipes[i]),
-              pipe_h = flap_rect_get_width(pipes[i]),
-              pipe_upper_y = flap_rect_get_y(pipes[i + 1]),
-              bird_y = flap_rect_get_y(bird),
-              bird_h = flap_rect_get_height(bird);
-
-        if (pipe_x < -1.16f) {
+        if (flap_rect_get_x(pipes[i]) < -1.0f - FLAP_PIPE_WIDTH) {
           flap_rect_move(pipes[i], 2.0f + FLAP_PIPE_WIDTH, 0);
           flap_rect_move(pipes[i + 1], 2.0f + FLAP_PIPE_WIDTH, 0);
-        } else if (pipe_x > -0.75f - 0.08f && pipe_x < -0.75f + 0.08f &&
-                   (bird_y < pipe_y + pipe_h ||
-                    bird_y > pipe_upper_y - bird_h)) {
+          // Collision test: pipe_x > FLAP_BIRD_X && pipe_x < FLAP_BIRD_X +
+          // FLAP_BIRD_WIDTH &&
+        } else if (flap_rect_intersect(bird, pipes[i]) ||
+                   flap_rect_intersect(bird, pipes[i + 1])) {
           game_state = STATE_GAMEOVER;
         }
       }
