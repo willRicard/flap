@@ -2,29 +2,16 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include <GL/glew.h>
-
 #include "flap.h"
 #include "rect.h"
 #include "window.h"
 
 typedef enum { STATE_PLAYING, STATE_GAMEOVER } flap_GameState;
 
-void GLAPIENTRY flap_message_callback(GLenum source, GLenum type, GLuint id,
-                                      GLenum severity, GLsizei length,
-                                      const GLchar *message,
-                                      const void *param) {
-
-  fprintf(stderr, "OpenGL: %s\n", message);
-}
-
 int main(int argc, char **argv) {
   srand((unsigned int)time(NULL));
 
   flap_Window *window = flap_window_new();
-
-  //glEnable(GL_DEBUG_OUTPUT);
-  //glDebugMessageCallback(flap_message_callback, 0);
 
   flap_GameState game_state = STATE_PLAYING;
 
@@ -53,6 +40,8 @@ int main(int argc, char **argv) {
   }
 
   float accel_y = 0.0f;
+
+  unsigned long num_frames = 0;
 
   int running = 1;
   while (running) {

@@ -12,6 +12,14 @@ struct flap_Window {
   GLFWwindow *window;
 };
 
+void GLAPIENTRY flap_message_callback(GLenum source, GLenum type, GLuint id,
+                                      GLenum severity, GLsizei length,
+                                      const GLchar *message,
+                                      const void *param) {
+
+  fprintf(stderr, "OpenGL: %s\n", message);
+}
+
 static void error_callback(int error, const char *description) {
   fprintf(stderr, "GLFW Error: %s\n", description);
 }
@@ -44,6 +52,11 @@ flap_Window *flap_window_new() {
                                     FLAP_WINDOW_TITLE, NULL, NULL);
 
   glfwMakeContextCurrent(window->window);
+
+  if (glewIsSupported("ARB_debug_output")) {
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(flap_message_callback, 0);
+  }
 
   glfwSetKeyCallback(window->window, key_callback);
   glfwSetFramebufferSizeCallback(window->window, resize_callback);
