@@ -33,8 +33,8 @@ void main() {
 
 static flap_Shader *shader = NULL;
 static GLuint vao = 0, vbo = 0, ebo = 0, count = 0;
-static flap_Rect *buffer = NULL;
-static GLubyte *indices = NULL;
+static flap_Rect buffer[1 + FLAP_NUM_PIPES];
+static GLubyte indices[6 * (1 + FLAP_NUM_PIPES)];
 
 void flap_rect_init() {
   shader = flap_shader_new(vertex_shader_source, fragment_shader_source);
@@ -50,18 +50,11 @@ void flap_rect_init() {
   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0); // in vec2 in_pos;
 
   glEnableVertexAttribArray(0);
-
-  buffer = (flap_Rect *)malloc((1 + FLAP_NUM_PIPES * 2) * sizeof(flap_Rect));
-  indices = (GLubyte *)malloc((1 + FLAP_NUM_PIPES * 2) * 4 * sizeof(GLubyte));
-  memset(buffer, 0, (1 + FLAP_NUM_PIPES * 2) * sizeof(flap_Rect));
-  memset(indices, 0, (1 + FLAP_NUM_PIPES * 2) * sizeof(GLubyte));
 }
 
 void flap_rect_quit() {
-  free(buffer);
-  free(indices);
-
   glDeleteBuffers(1, &vbo);
+  glDeleteBuffers(1, &ebo);
 
   glDeleteVertexArrays(1, &vao);
 
@@ -110,7 +103,8 @@ int flap_rect_intersect(flap_Rect *r1, flap_Rect *r2) {
   float r2_w = flap_rect_get_width(r2);
   float r2_h = flap_rect_get_height(r2);
 
-  return (r1_x < r2_x + r2_w && r2_x < r1_x + r1_w && r1_y < r2_y + r2_h && r2_y < r1_y + r1_h);
+  return (r1_x < r2_x + r2_w && r2_x < r1_x + r1_w && r1_y < r2_y + r2_h &&
+          r2_y < r1_y + r1_h);
 }
 
 void flap_rect_set_x(flap_Rect *rect, float x) {
