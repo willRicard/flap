@@ -8,9 +8,7 @@
 
 #include "flap.h"
 
-struct flap_Window {
-  GLFWwindow *window;
-};
+static GLFWwindow *window;
 
 void GLAPIENTRY flap_message_callback(GLenum source, GLenum type, GLuint id,
                                       GLenum severity, GLsizei length,
@@ -36,60 +34,55 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action,
   }
 }
 
-flap_Window *flap_window_new() {
+void flap_window_init() {
   glfwInit();
 
   glfwSetErrorCallback(error_callback);
-
-  flap_Window *window = (flap_Window *)malloc(sizeof(flap_Window));
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 1);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-  window->window = glfwCreateWindow(FLAP_WINDOW_WIDTH, FLAP_WINDOW_HEIGHT,
+  window = glfwCreateWindow(FLAP_WINDOW_WIDTH, FLAP_WINDOW_HEIGHT,
                                     FLAP_WINDOW_TITLE, NULL, NULL);
 
-  glfwMakeContextCurrent(window->window);
+  glfwMakeContextCurrent(window);
 
   if (glewIsSupported("ARB_debug_output")) {
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(flap_message_callback, 0);
   }
 
-  glfwSetKeyCallback(window->window, key_callback);
-  glfwSetFramebufferSizeCallback(window->window, resize_callback);
+  glfwSetKeyCallback(window, key_callback);
+  glfwSetFramebufferSizeCallback(window, resize_callback);
 
   GLenum err = glewInit();
   if (err != GLEW_OK) {
     printf("GLEW Error: %s\n", glewGetErrorString(err));
     exit(1);
   }
-
-  return window;
 }
 
-void flap_window_free(flap_Window *window) {
-  glfwDestroyWindow(window->window);
+void flap_window_quit() {
+  glfwDestroyWindow(window);
   glfwTerminate();
-  free(window);
 }
 
-int flap_window_should_close(flap_Window *window) {
-  return glfwWindowShouldClose(window->window);
+int flap_window_should_close() {
+  return glfwWindowShouldClose(window);
 }
 
-int flap_window_thrust(flap_Window *window) {
-  return (glfwGetKey(window->window, GLFW_KEY_SPACE) == GLFW_PRESS);
+int flap_window_thrust() {
+  return (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
 }
 
-void flap_window_update(flap_Window *window) {
+void flap_window_update() {
   glClearColor(0.53f, 0.81f, 0.92f, 1.f);
   glClear(GL_COLOR_BUFFER_BIT);
   glfwPollEvents();
 }
 
-void flap_window_render(flap_Window *window) {
-  glfwSwapBuffers(window->window);
+void flap_window_render() {
+  glfwSwapBuffers(window);
 }

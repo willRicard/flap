@@ -11,11 +11,11 @@ typedef enum { STATE_PLAYING, STATE_GAMEOVER } flap_GameState;
 int main(int argc, char **argv) {
   srand((unsigned int)time(NULL));
 
-  flap_Window *window = flap_window_new();
+  flap_window_init();
+  flap_rect_init();
 
   flap_GameState game_state = STATE_PLAYING;
 
-  flap_rect_init();
 
   flap_Rect *bird = flap_rect_new();
 
@@ -43,12 +43,12 @@ int main(int argc, char **argv) {
 
   int running = 1;
   while (running) {
-    running = !flap_window_should_close(window);
+    running = !flap_window_should_close();
 
-    flap_window_update(window);
+    flap_window_update();
 
     if (game_state == STATE_PLAYING) {
-      if (flap_window_thrust(window) && accel_y < 0.02f) {
+      if (flap_window_thrust() && accel_y < 0.02f) {
         accel_y += 0.004f;
       } else {
         accel_y -= 0.001f;
@@ -80,12 +80,11 @@ int main(int argc, char **argv) {
 
     flap_rect_draw();
 
-    flap_window_render(window);
+    flap_window_render();
   }
 
   flap_rect_quit();
-
-  flap_window_free(window);
+  flap_window_quit();
 
   return 0;
 }
