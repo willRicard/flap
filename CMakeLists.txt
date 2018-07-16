@@ -11,10 +11,17 @@ find_package(GLEW)
 if(Vulkan_FOUND AND NOT USE_OPENGL)
   add_executable(flap
     main.c
+    init.h
+    window.h
+    rect.h
     rect.c
     vk/init.c
+    vk/shaders.h
+    vk/window.h
     vk/window.c
+    vk/renderer.h
     vk/renderer.c
+    vk/pipeline.h
     vk/pipeline.c
     vk/rect.c)
 
@@ -28,9 +35,13 @@ elseif(OpenGL_FOUND)
 
   add_executable(flap
     main.c
+    init.h
+    window.h
+    rect.h
     rect.c
     gl/init.c
     gl/window.c
+    gl/shader.h
     gl/shader.c
     gl/rect.c)
 
