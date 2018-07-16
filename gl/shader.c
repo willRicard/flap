@@ -6,7 +6,7 @@
 
 #include "flap.h"
 
-static void compile_shader(GLuint shader, const char *source) {
+static void compileShader(GLuint shader, const char *source) {
   size_t len = strlen(source);
   glShaderSource(shader, 1, &source, (const GLint *)&len);
 
@@ -40,18 +40,18 @@ static void compile_shader(GLuint shader, const char *source) {
   }
 }
 
-flap_Shader *flap_shader_new(const char *vertex_shader_source,
-                             const char *fragment_shader_source) {
-  flap_Shader *shader = (flap_Shader *)malloc(sizeof(flap_Shader));
-  shader->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-  shader->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+flapShader *flapShaderNew(const char *vertexShaderSource,
+                             const char *fragmentShaderSource) {
+  flapShader *shader = (flapShader *)malloc(sizeof(flapShader));
+  shader->vertexShader = glCreateShader(GL_VERTEX_SHADER);
+  shader->fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
   shader->program = glCreateProgram();
 
-  compile_shader(shader->vertex_shader, vertex_shader_source);
-  compile_shader(shader->fragment_shader, fragment_shader_source);
+  compileShader(shader->vertexShader, vertexShaderSource);
+  compileShader(shader->fragmentShader, fragmentShaderSource);
 
-  glAttachShader(shader->program, shader->vertex_shader);
-  glAttachShader(shader->program, shader->fragment_shader);
+  glAttachShader(shader->program, shader->vertexShader);
+  glAttachShader(shader->program, shader->fragmentShader);
 
   glLinkProgram(shader->program);
 
@@ -83,9 +83,9 @@ flap_Shader *flap_shader_new(const char *vertex_shader_source,
   return shader;
 }
 
-void flap_shader_free(flap_Shader *shader) {
-  glDeleteShader(shader->vertex_shader);
-  glDeleteShader(shader->fragment_shader);
+void flapShaderFree(flapShader *shader) {
+  glDeleteShader(shader->vertexShader);
+  glDeleteShader(shader->fragmentShader);
   glDeleteProgram(shader->program);
   free(shader);
 }

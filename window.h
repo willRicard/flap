@@ -1,16 +1,16 @@
 #ifndef FLAP_WINDOW_H_
 #define FLAP_WINDOW_H_
 
-void flap_window_init();
+void flapWindowInit();
 
-void flap_window_quit();
+void flapWindowQuit();
 
-int flap_window_should_close();
+int flapWindowShouldClose();
 
-int flap_window_thrust();
+int flapWindowThrust();
 
-void flap_window_update();
+void flapWindowUpdate();
 
-void flap_window_render();
+void flapWindowRender();
 
 #endif // FLAP_WINDOW_H_

@@ -1,44 +1,54 @@
 #ifndef FLAP_RECT_H_
 #define FLAP_RECT_H_
+#include <inttypes.h>
 
-typedef struct flap_Rect {
-  float vertices[8];
-} flap_Rect;
+typedef struct {
+  float x;
+  float y;
+  float w;
+  float h;
+} flapVertex;
 
-void flap_rect_init();
+typedef struct flapRect {
+  flapVertex vertices[4];
+} flapRect;
 
-void flap_rect_quit();
+flapRect *flapRectNew();
 
-flap_Rect *flap_rect_new();
+flapRect *flapRectGetVertices();
 
+const uint16_t *flapRectGetIndices();
 
-float flap_rect_get_x(flap_Rect *rect);
+float flapRectGetX(flapRect *rect);
 
-float flap_rect_get_y(flap_Rect *rect);
+float flapRectGetY(flapRect *rect);
 
-float flap_rect_get_width(flap_Rect *rect);
+float flapRectGetWidth(flapRect *rect);
 
-float flap_rect_get_height(flap_Rect *rect);
+float flapRectGetHeight(flapRect *rect);
 
+int flapRectIntersect(flapRect *r1, flapRect *r2);
 
-int flap_rect_intersect(flap_Rect *r1, flap_Rect *r2);
+void flapRectSetX(flapRect *rect, float x);
 
+void flapRectSetY(flapRect *rect, float y);
 
-void flap_rect_set_x(flap_Rect *rect, float x);
+void flapRectSetPosition(flapRect *rect, float x, float y);
 
-void flap_rect_set_y(flap_Rect *rect, float y);
+void flapRectMove(flapRect *rect, float x, float y);
 
-void flap_rect_set_position(flap_Rect *rect, float x, float y);
+void flapRectSetWidth(flapRect *rect, float width);
 
-void flap_rect_move(flap_Rect *rect, float x, float y);
+void flapRectSetHeight(flapRect *rect, float height);
 
-void flap_rect_set_width(flap_Rect *rect, float width);
+void flapRectSetSize(flapRect *rect, float width, float height);
 
-void flap_rect_set_height(flap_Rect *rect, float height);
+// The following methods must be implemented by the render system.
 
-void flap_rect_set_size(flap_Rect *rect, float width, float height);
+void flapRectInit();
 
+void flapRectQuit();
 
-void flap_rect_draw();
+void flapRectDraw();
 
 #endif // FLAP_RECT_H_
