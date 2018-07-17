@@ -28,6 +28,6 @@ void flapRendererCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                               VkBuffer *buffer, VkDeviceMemory *bufferMemory);
 
 void flapRendererBufferData(VkDeviceMemory bufferMemory, VkDeviceSize size,
-                            void *data);
+                            const void *data);
 
 #endif // FLAP_RENDERER_H_

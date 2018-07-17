@@ -589,7 +589,7 @@ void flapRendererCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 }
 
 void flapRendererBufferData(VkDeviceMemory bufferMemory, VkDeviceSize size,
-                            void *data) {
+                            const void *data) {
   uint8_t *destMemory;
   if (vkMapMemory(device, bufferMemory, 0, size, 0, (void *)&destMemory) !=
       VK_SUCCESS) {
