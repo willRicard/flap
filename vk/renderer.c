@@ -7,9 +7,6 @@
 #include "flap.h"
 #include "window.h"
 
-const float FLAP_BIRD_COLOR[] = {1.f, 1.f, 0.f};
-const float FLAP_PIPE_COLOR[] = {0.035f, 0.42f, 0.035f};
-
 static VkInstance instance = VK_NULL_HANDLE;
 
 static VkDevice device = VK_NULL_HANDLE;

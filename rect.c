@@ -2,6 +2,9 @@
 #include "rect.h"
 #include <inttypes.h>
 
+const float FLAP_BIRD_COLOR[] = {1.f, 1.f, 0.f};
+const float FLAP_PIPE_COLOR[] = {0.035f, 0.42f, 0.035f};
+
 static unsigned int count = 0;
 
 static flapRect vertices[1 + FLAP_NUM_PIPES * 2];
