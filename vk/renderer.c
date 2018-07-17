@@ -443,7 +443,7 @@ void flapRendererQuit() {
 
 void flapRendererRender() {
   uint32_t imageIndex;
-  vkAcquireNextImageKHR(device, swapchain, UINT32_MAX, imageAvailableSemaphore,
+  vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, imageAvailableSemaphore,
                         NULL, &imageIndex);
 
   VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;

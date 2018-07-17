@@ -19,7 +19,8 @@ void flapRendererSetVertexBuffer(VkBuffer buffer);
 
 void flapRendererSetIndexBuffer(VkBuffer buffer);
 
-void flapRendererSetPipeline(VkPipeline pipeline, VkPipelineLayout pipelineLayout);
+void flapRendererSetPipeline(VkPipeline pipeline,
+                             VkPipelineLayout pipelineLayout);
 
 void flapRendererRecordCommandBuffers();
 
