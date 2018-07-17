@@ -19,6 +19,4 @@
 #define FLAP_PIPE_OPENING 0.34f
 #define FLAP_PIPE_STEP 0.5f
 
-#define GLSL(src) "#version 330 core\n" #src
-
 #endif // FLAP_FLAP_H

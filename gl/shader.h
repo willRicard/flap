@@ -2,6 +2,8 @@
 #define FLAP_SHADER_H_
 #include <GL/glew.h>
 
+#define GLSL(src) "#version 330 core\n" #src
+
 typedef struct flapShader {
   GLuint vertexShader;
   GLuint fragmentShader;
