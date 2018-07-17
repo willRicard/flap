@@ -10,13 +10,13 @@
 #include "vk/renderer.h"
 
 static GLFWwindow *window;
+static double lastUpdate = 0.0;
 
 static void errorCallback(int error, const char *description) {
   fprintf(stderr, "GLFW Error: %s\n", description);
 }
 
-static void resizeCallback(GLFWwindow *window, int width, int height) {
-}
+static void resizeCallback(GLFWwindow *window, int width, int height) {}
 
 static void keyCallback(GLFWwindow *window, int key, int scancode, int action,
                         int mods) {
@@ -62,7 +62,15 @@ int flapWindowThrust() {
 
 void flapWindowUpdate() { glfwPollEvents(); }
 
-void flapWindowRender() { 
-  usleep(16000);
+void flapWindowRender() {
+  double lastUpdate = glfwGetTime();
+  double nextUpdate = lastUpdate + 0.16;
+
   flapRendererRender();
+
+  double now = glfwGetTime();
+  double sleepTime = nextUpdate - now;
+  if (sleepTime > 0.0) {
+    usleep((useconds_t)(sleepTime * 100000.0));
+  }
 }
