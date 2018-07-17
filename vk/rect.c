@@ -48,6 +48,7 @@ void flapRectInit() {
 
 void flapRectQuit() {
   VkDevice device = flapRendererGetDevice();
+  vkDeviceWaitIdle(device);
 
   vkDestroyBuffer(device, vertexBuffer, NULL);
   vkFreeMemory(device, vertexBufferMemory, NULL);

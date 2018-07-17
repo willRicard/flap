@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "flap.h"
 #include "window.h"
@@ -21,9 +22,9 @@ static VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 static VkFormat imageFormat = VK_FORMAT_UNDEFINED;
 static VkExtent2D imageExtent;
 
-static uint32_t imageCount = 3;
-static VkImage *swapchainImages;
-static VkImageView *swapchainImageViews;
+static uint32_t imageCount = 3, frameID = 0;
+static VkImage *swapchainImages = NULL;
+static VkImageView *swapchainImageViews = NULL;
 
 static VkRenderPass renderPass;
 
@@ -32,7 +33,10 @@ static VkFramebuffer *framebuffers;
 static VkCommandPool commandPool = VK_NULL_HANDLE;
 static VkCommandBuffer *commandBuffers;
 
-static VkSemaphore imageAvailableSemaphore, renderFinishedSemaphore;
+static VkSemaphore *imageAvailableSemaphores = NULL;
+static VkSemaphore *renderFinishedSemaphores = NULL;
+
+static VkFence *fences = NULL;
 
 static VkBuffer vertexBuffer = VK_NULL_HANDLE;
 static VkBuffer indexBuffer = VK_NULL_HANDLE;
@@ -352,12 +356,24 @@ void flapRendererInit() {
   subpass.colorAttachmentCount = 1;
   subpass.pColorAttachments = &colorAttachmentReference;
 
+  VkSubpassDependency subpassDependency = {};
+  subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+  subpassDependency.dstSubpass = 0;
+  subpassDependency.srcStageMask =
+      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  subpassDependency.srcAccessMask = 0;
+  subpassDependency.dstStageMask =
+      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  subpassDependency.dstAccessMask = 0;
+
   VkRenderPassCreateInfo renderPassCreateInfo = {};
   renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
   renderPassCreateInfo.attachmentCount = 1;
   renderPassCreateInfo.pAttachments = &colorAttachment;
   renderPassCreateInfo.subpassCount = 1;
   renderPassCreateInfo.pSubpasses = &subpass;
+  renderPassCreateInfo.dependencyCount = 1;
+  renderPassCreateInfo.pDependencies = &subpassDependency;
 
   if (vkCreateRenderPass(device, &renderPassCreateInfo, NULL, &renderPass) !=
       VK_SUCCESS) {
@@ -400,23 +416,38 @@ void flapRendererInit() {
     exit(EXIT_FAILURE);
   }
 
-  // Create semaphores for rendering.
+  // Create semaphores and fences for rendering synchronization.
+  imageAvailableSemaphores =
+      (VkSemaphore *)malloc(imageCount * sizeof(VkSemaphore));
+  renderFinishedSemaphores =
+      (VkSemaphore *)malloc(imageCount * sizeof(VkSemaphore));
+  fences = (VkFence *)malloc(imageCount * sizeof(VkFence));
+
   VkSemaphoreCreateInfo semaphoreCreateInfo = {};
   semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-  if (vkCreateSemaphore(device, &semaphoreCreateInfo, NULL,
-                        &imageAvailableSemaphore) != VK_SUCCESS ||
-      vkCreateSemaphore(device, &semaphoreCreateInfo, NULL,
-                        &renderFinishedSemaphore) != VK_SUCCESS) {
-    fputs("An error occured while creating the semaphores.", stderr);
+  VkFenceCreateInfo fenceCreateInfo = {};
+  fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+  for (uint32_t i = 0; i < imageCount; i++) {
+    if (vkCreateSemaphore(device, &semaphoreCreateInfo, NULL,
+                          &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+        vkCreateSemaphore(device, &semaphoreCreateInfo, NULL,
+                          &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+        vkCreateFence(device, &fenceCreateInfo, NULL, &fences[i]) !=
+            VK_SUCCESS) {
+      fputs("An error occured while creating the rendering synchronization "
+            "primitives.",
+            stderr);
+    }
   }
 }
 
 void flapRendererQuit() {
+  vkQueueWaitIdle(graphicsQueue);
+  vkQueueWaitIdle(presentQueue);
   vkDeviceWaitIdle(device);
-
-  vkDestroySemaphore(device, renderFinishedSemaphore, NULL);
-  vkDestroySemaphore(device, imageAvailableSemaphore, NULL);
 
   vkFreeCommandBuffers(device, commandPool, imageCount, commandBuffers);
   free(commandBuffers);
@@ -424,9 +455,18 @@ void flapRendererQuit() {
   vkDestroyCommandPool(device, commandPool, NULL);
 
   for (uint32_t i = 0; i < imageCount; i++) {
+    vkDestroySemaphore(device, renderFinishedSemaphores[i], NULL);
+    vkDestroySemaphore(device, imageAvailableSemaphores[i], NULL);
+
+    vkDestroyFence(device, fences[i], NULL);
+
     vkDestroyFramebuffer(device, framebuffers[i], NULL);
     vkDestroyImageView(device, swapchainImageViews[i], NULL);
   }
+
+  free(fences);
+  free(imageAvailableSemaphores);
+  free(renderFinishedSemaphores);
 
   free(framebuffers);
   free(swapchainImageViews);
@@ -442,23 +482,28 @@ void flapRendererQuit() {
 }
 
 void flapRendererRender() {
-  uint32_t imageIndex;
-  vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, imageAvailableSemaphore,
-                        NULL, &imageIndex);
+  vkWaitForFences(device, 1, &fences[frameID], VK_TRUE, UINT64_MAX);
+  vkResetFences(device, 1, &fences[frameID]);
 
-  VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+  uint32_t imageIndex;
+  vkAcquireNextImageKHR(device, swapchain, UINT64_MAX,
+                        imageAvailableSemaphores[frameID], NULL, &imageIndex);
+
+  VkPipelineStageFlags waitStage =
+      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
   VkSubmitInfo submitInfo = {};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
   submitInfo.waitSemaphoreCount = 1;
-  submitInfo.pWaitSemaphores = &imageAvailableSemaphore;
+  submitInfo.pWaitSemaphores = &imageAvailableSemaphores[imageIndex];
   submitInfo.pWaitDstStageMask = &waitStage;
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
   submitInfo.signalSemaphoreCount = 1;
-  submitInfo.pSignalSemaphores = &renderFinishedSemaphore;
+  submitInfo.pSignalSemaphores = &renderFinishedSemaphores[imageIndex];
 
-  if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, NULL) != VK_SUCCESS) {
+  if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, fences[imageIndex]) !=
+      VK_SUCCESS) {
     fputs("Error submitting command buffers.", stderr);
     exit(EXIT_FAILURE);
   }
@@ -466,13 +511,14 @@ void flapRendererRender() {
   VkPresentInfoKHR presentInfo = {};
   presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
   presentInfo.waitSemaphoreCount = 1;
-  presentInfo.pWaitSemaphores = &renderFinishedSemaphore;
+  presentInfo.pWaitSemaphores = &renderFinishedSemaphores[imageIndex];
   presentInfo.swapchainCount = 1;
   presentInfo.pSwapchains = &swapchain;
   presentInfo.pImageIndices = &imageIndex;
 
   vkQueuePresentKHR(presentQueue, &presentInfo);
-  vkQueueWaitIdle(presentQueue);
+
+  frameID = (frameID + 1) % imageCount;
 }
 
 VkDevice flapRendererGetDevice() { return device; }
