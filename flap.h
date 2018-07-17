@@ -19,7 +19,7 @@
 #define FLAP_PIPE_OPENING 0.34f
 #define FLAP_PIPE_STEP 0.5f
 
-extern const float *FLAP_BIRD_COLOR;
-extern const float *FLAP_PIPE_COLOR;
+extern const float FLAP_BIRD_COLOR[];
+extern const float FLAP_PIPE_COLOR[];
 
 #endif // FLAP_FLAP_H
