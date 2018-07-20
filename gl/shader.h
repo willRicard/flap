@@ -10,9 +10,9 @@ typedef struct flapShader {
   GLuint program;
 } flapShader;
 
-flapShader *flapShaderNew(const char *vertexShaderSource,
-                          const char *fragmentShaderSource);
+flapShader flapShaderCreate(const char *vertexShaderSource,
+                            const char *fragmentShaderSource);
 
-void flapShaderFree(flapShader *shader);
+void flapShaderDestroy(flapShader shader);
 
 #endif // FLAP_SHADER_H_

@@ -40,25 +40,25 @@ static void compileShader(GLuint shader, const char *source) {
   }
 }
 
-flapShader *flapShaderNew(const char *vertexShaderSource,
-                             const char *fragmentShaderSource) {
-  flapShader *shader = (flapShader *)malloc(sizeof(flapShader));
-  shader->vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  shader->fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  shader->program = glCreateProgram();
+flapShader flapShaderCreate(const char *vertexShaderSource,
+                         const char *fragmentShaderSource) {
+  flapShader shader;
+  shader.vertexShader = glCreateShader(GL_VERTEX_SHADER);
+  shader.fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+  shader.program = glCreateProgram();
 
-  compileShader(shader->vertexShader, vertexShaderSource);
-  compileShader(shader->fragmentShader, fragmentShaderSource);
+  compileShader(shader.vertexShader, vertexShaderSource);
+  compileShader(shader.fragmentShader, fragmentShaderSource);
 
-  glAttachShader(shader->program, shader->vertexShader);
-  glAttachShader(shader->program, shader->fragmentShader);
+  glAttachShader(shader.program, shader.vertexShader);
+  glAttachShader(shader.program, shader.fragmentShader);
 
-  glLinkProgram(shader->program);
+  glLinkProgram(shader.program);
 
   GLint err;
-  glGetProgramiv(shader->program, GL_LINK_STATUS, &err);
+  glGetProgramiv(shader.program, GL_LINK_STATUS, &err);
   if (err != GL_TRUE) {
-    glGetProgramiv(shader->program, GL_INFO_LOG_LENGTH, &err);
+    glGetProgramiv(shader.program, GL_INFO_LOG_LENGTH, &err);
 
     if (err == 0) {
       fputs("No info log was provided.", stderr);
@@ -71,7 +71,7 @@ flapShader *flapShaderNew(const char *vertexShaderSource,
       exit(1);
     }
 
-    glGetProgramInfoLog(shader->program, err, &err, buf);
+    glGetProgramInfoLog(shader.program, err, &err, buf);
 
     puts(buf);
 
@@ -83,9 +83,8 @@ flapShader *flapShaderNew(const char *vertexShaderSource,
   return shader;
 }
 
-void flapShaderFree(flapShader *shader) {
-  glDeleteShader(shader->vertexShader);
-  glDeleteShader(shader->fragmentShader);
-  glDeleteProgram(shader->program);
-  free(shader);
+void flapShaderDestroy(flapShader shader) {
+  glDeleteShader(shader.vertexShader);
+  glDeleteShader(shader.fragmentShader);
+  glDeleteProgram(shader.program);
 }

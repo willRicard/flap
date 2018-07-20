@@ -30,11 +30,11 @@ void main() {
 });
 // clang-format on
 
-static flapShader *shader = NULL;
+static flapShader shader;
 static GLuint vao = 0, vbo = 0, ebo = 0;
 
 void flapRectInit() {
-  shader = flapShaderNew(vertexShaderSource, fragmentShaderSource);
+  shader = flapShaderCreate(vertexShaderSource, fragmentShaderSource);
 
   glGenVertexArrays(1, &vao);
   glGenBuffers(1, &vbo);
@@ -60,11 +60,11 @@ void flapRectQuit() {
 
   glDeleteVertexArrays(1, &vao);
 
-  flapShaderFree(shader);
+  flapShaderDestroy(shader);
 }
 
 void flapRectDraw() {
-  glUseProgram(shader->program);
+  glUseProgram(shader.program);
 
   glBindVertexArray(vao);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -73,7 +73,7 @@ void flapRectDraw() {
   glBufferData(GL_ARRAY_BUFFER, (1 + FLAP_NUM_PIPES * 2) * sizeof(flapRect),
                flapRectGetVertices(), GL_DYNAMIC_DRAW);
 
-  const GLuint color_location = glGetUniformLocation(shader->program, "color");
+  const GLuint color_location = glGetUniformLocation(shader.program, "color");
 
   glUniform3fv(color_location, 1, FLAP_BIRD_COLOR);
 
