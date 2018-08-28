@@ -41,7 +41,7 @@ static void compileShader(GLuint shader, const char *source) {
 }
 
 flapShader flapShaderCreate(const char *vertexShaderSource,
-                         const char *fragmentShaderSource) {
+                            const char *fragmentShaderSource) {
   flapShader shader;
   shader.vertexShader = glCreateShader(GL_VERTEX_SHADER);
   shader.fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);

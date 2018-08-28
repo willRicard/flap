@@ -46,7 +46,7 @@ void flapWindowInit() {
                             FLAP_WINDOW_TITLE, NULL, NULL);
 
   glfwMakeContextCurrent(window);
-  
+
   GLenum err = glewInit();
   if (err != GLEW_OK) {
     printf("GLEW Error: %s\n", glewGetErrorString(err));

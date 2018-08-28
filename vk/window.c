@@ -18,8 +18,8 @@ static void errorCallback(int error, const char *description) {
 }
 
 static void resizeCallback(GLFWwindow *window, int width, int height) {
-	flapRendererCleanupSwapchain();
-	flapRendererCreateSwapchain();
+  flapRendererCleanupSwapchain();
+  flapRendererCreateSwapchain();
 }
 
 static void keyCallback(GLFWwindow *window, int key, int scancode, int action,
@@ -59,6 +59,8 @@ VkResult flapWindowCreateSurface(VkInstance instance, VkSurfaceKHR *surface) {
 }
 
 int flapWindowShouldClose() { return glfwWindowShouldClose(window); }
+
+double flapWindowGetTime() { return glfwGetTime(); }
 
 int flapWindowThrust() {
   return (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);

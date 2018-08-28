@@ -7,6 +7,8 @@ void flapWindowQuit();
 
 int flapWindowShouldClose();
 
+double flapWindowGetTime();
+
 int flapWindowThrust();
 
 void flapWindowUpdate();

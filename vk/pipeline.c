@@ -24,7 +24,7 @@ static uint32_t *readFile(const char *fileName, size_t *dataSize) {
   long size = ftell(file);
 
   char *data = NULL;
-  data = (char*)malloc(size * sizeof(char));
+  data = (char *)malloc(size * sizeof(char));
   if (data == NULL) {
     return NULL;
   }
@@ -275,7 +275,7 @@ flapPipeline flapPipelineCreate(const char *vertexShader,
     exit(EXIT_FAILURE);
   }
 
-  VkGraphicsPipelineCreateInfo pipelineCreateInfo = { 0 };
+  VkGraphicsPipelineCreateInfo pipelineCreateInfo = {0};
   pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
   pipelineCreateInfo.pNext = NULL;
   pipelineCreateInfo.flags = 0;

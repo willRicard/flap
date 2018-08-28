@@ -39,30 +39,37 @@ int main(int argc, char **argv) {
     flapRectSetSize(pipes[i + 1], FLAP_PIPE_WIDTH, 2.0f - h);
   }
 
-  float accelY = 0.0f;
+  float speedY = 0.0f;
+
+  double startTime = flapWindowGetTime();
 
   int running = 1;
   while (running) {
     running = !flapWindowShouldClose();
 
+    double now = flapWindowGetTime();
+    double dt = now - startTime;
+    startTime = now;
+
     flapWindowUpdate();
 
     if (gameState == STATE_PLAYING) {
-      if (flapWindowThrust() && accelY < 0.02f) {
-        accelY += 0.004f;
+      if (flapWindowThrust() && speedY < 0.02f) {
+        speedY += 0.004f * dt;
       } else {
-        accelY -= 0.001f;
+        speedY -= 0.001f * dt;
       }
 
-      flapRectMove(bird, 0, accelY);
+      flapRectMove(bird, 0, speedY);
 
       if (flapRectGetY(bird) < -1.0f) {
         gameState = STATE_GAMEOVER;
       }
 
       for (int i = 0; i < FLAP_NUM_PIPES; i += 2) {
-        flapRectMove(pipes[i], FLAP_SCROLL_SPEED, 0);
-        flapRectMove(pipes[i + 1], FLAP_SCROLL_SPEED, 0);
+        float scrollDeltaX = FLAP_SCROLL_SPEED * dt;
+        flapRectMove(pipes[i], scrollDeltaX, 0);
+        flapRectMove(pipes[i + 1], scrollDeltaX, 0);
 
         if (flapRectGetX(pipes[i]) < -1.0f - FLAP_PIPE_WIDTH) {
           flapRectMove(pipes[i], 2.0f + FLAP_PIPE_WIDTH, 0);

@@ -5,7 +5,7 @@
 #define FLAP_WINDOW_WIDTH 800
 #define FLAP_WINDOW_HEIGHT 450
 
-#define FLAP_SCROLL_SPEED -0.004f
+#define FLAP_SCROLL_SPEED -0.24f
 
 #define FLAP_BIRD_X -0.75f
 #define FLAP_BIRD_Y 0.75f
