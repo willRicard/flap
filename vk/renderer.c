@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "flap.h"
 #include "window.h"
@@ -52,16 +51,22 @@ void flapRendererInit() {
 
   VkInstance instance;
 
-  VkApplicationInfo appInfo = {};
-  appInfo.apiVersion = VK_MAKE_VERSION(1, 1, 0);
-  appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-  appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+  VkApplicationInfo appInfo;
+  appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+  appInfo.pNext = NULL;
   appInfo.pApplicationName = "Flap";
+  appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
   appInfo.pEngineName = "No Engine";
+  appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+  appInfo.apiVersion = VK_MAKE_VERSION(1, 1, 0);
 
-  VkInstanceCreateInfo instanceCreateInfo = {};
+  VkInstanceCreateInfo instanceCreateInfo;
   instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+  instanceCreateInfo.pNext = NULL;
+  instanceCreateInfo.flags = 0;
   instanceCreateInfo.pApplicationInfo = &appInfo;
+  instanceCreateInfo.enabledLayerCount = 0;
+  instanceCreateInfo.ppEnabledLayerNames = NULL;
   instanceCreateInfo.enabledExtensionCount = surfaceExtentionCount;
   instanceCreateInfo.ppEnabledExtensionNames = surfaceExtensions;
 
@@ -91,10 +96,10 @@ void flapRendererInit() {
   for (uint32_t i = 0; i < deviceCount; i++) {
     VkPhysicalDeviceProperties properties;
     vkGetPhysicalDeviceProperties(devices[i], &properties);
-    if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
+    if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
       physicalDevice = devices[i];
       break;
-    } else if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+    } else if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
       physicalDevice = devices[i];
     }
   }
@@ -105,7 +110,7 @@ void flapRendererInit() {
 
   free(devices);
 
-  // Query memory properties for later allocations, etc.
+  // Query memory properties for later allocations
   vkGetPhysicalDeviceMemoryProperties(physicalDevice,
                                       &physicalDeviceMemoryProperties);
 
@@ -125,7 +130,7 @@ void flapRendererInit() {
   vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount,
                                            queueFamilyProperties);
 
-  // Pick the first available graphics & present queues.
+  // Pick the best graphics & present queues.
   uint32_t graphicsQueueID = 0, presentQueueID = 0;
   for (uint32_t i = 0; i < queueFamilyCount; i++) {
     VkQueueFamilyProperties queueFamily = queueFamilyProperties[i];
@@ -143,6 +148,7 @@ void flapRendererInit() {
                                          &presentSupported);
     if (presentSupported) {
       presentQueueID = i;
+	  break;
     } else if (i == queueFamilyCount - 1) {
       fputs("No present queue was found.", stderr);
       exit(EXIT_FAILURE);
@@ -153,26 +159,35 @@ void flapRendererInit() {
 
   float priority = 1.f;
 
-  VkDeviceQueueCreateInfo queueCreateInfos[2] = {};
+  VkDeviceQueueCreateInfo queueCreateInfos[2];
 
   queueCreateInfos[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+  queueCreateInfos[0].pNext = NULL;
+  queueCreateInfos[0].flags = 0;
   queueCreateInfos[0].queueFamilyIndex = graphicsQueueID;
   queueCreateInfos[0].queueCount = 1;
   queueCreateInfos[0].pQueuePriorities = &priority;
 
   queueCreateInfos[1].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+  queueCreateInfos[1].pNext = NULL;
+  queueCreateInfos[1].flags = 0;
   queueCreateInfos[1].queueFamilyIndex = presentQueueID;
   queueCreateInfos[1].queueCount = 1;
   queueCreateInfos[1].pQueuePriorities = &priority;
 
   static const char *deviceExtension = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 
-  VkDeviceCreateInfo deviceCreateInfo = {};
+  VkDeviceCreateInfo deviceCreateInfo = { 0 };
   deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+  deviceCreateInfo.pNext = NULL;
+  deviceCreateInfo.flags = 0;
   deviceCreateInfo.queueCreateInfoCount = 1;
   deviceCreateInfo.pQueueCreateInfos = queueCreateInfos;
+  deviceCreateInfo.enabledLayerCount = 0;
+  deviceCreateInfo.ppEnabledLayerNames = NULL;
   deviceCreateInfo.enabledExtensionCount = 1;
   deviceCreateInfo.ppEnabledExtensionNames = &deviceExtension;
+  deviceCreateInfo.pEnabledFeatures = NULL;
 
   vkCreateDevice(physicalDevice, &deviceCreateInfo, NULL, &device);
 
@@ -259,8 +274,10 @@ void flapRendererInit() {
   free(formats);
 
   // Create the swapchain.
-  VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
+  VkSwapchainCreateInfoKHR swapchainCreateInfo = { 0 };
   swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+  swapchainCreateInfo.pNext = NULL;
+  swapchainCreateInfo.flags = 0;
   swapchainCreateInfo.surface = surface;
   swapchainCreateInfo.minImageCount = imageCount;
   swapchainCreateInfo.imageFormat = bestFormat.format;
@@ -268,6 +285,7 @@ void flapRendererInit() {
   swapchainCreateInfo.imageExtent = imageExtent;
   swapchainCreateInfo.imageArrayLayers = 1;
   swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+  
 
   if (graphicsQueueID != presentQueueID) {
     uint32_t queueFamilyIndices[2] = {graphicsQueueID, presentQueueID};
@@ -277,12 +295,15 @@ void flapRendererInit() {
     swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
   } else {
     swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	swapchainCreateInfo.queueFamilyIndexCount = 0;
+	swapchainCreateInfo.pQueueFamilyIndices = NULL;
   }
 
   swapchainCreateInfo.preTransform = capabilities.currentTransform;
   swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
   swapchainCreateInfo.presentMode = bestPresentMode;
   swapchainCreateInfo.clipped = VK_TRUE;
+  swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
   if (vkCreateSwapchainKHR(device, &swapchainCreateInfo, NULL, &swapchain) !=
       VK_SUCCESS) {
@@ -299,8 +320,10 @@ void flapRendererInit() {
   vkGetSwapchainImagesKHR(device, swapchain, &imageCount, swapchainImages);
 
   for (uint32_t i = 0; i < imageCount; ++i) {
-    VkImageViewCreateInfo imageViewCreateInfo = {};
+	VkImageViewCreateInfo imageViewCreateInfo = { 0 };
     imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imageViewCreateInfo.pNext = NULL;
+    imageViewCreateInfo.flags = 0;
     imageViewCreateInfo.image = swapchainImages[i];
     imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     imageViewCreateInfo.format = imageFormat;
@@ -324,50 +347,49 @@ void flapRendererInit() {
     }
   }
 
-  // Create the command pool
-  VkCommandPoolCreateInfo commandPoolCreateInfo = {};
-  commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-  commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-  commandPoolCreateInfo.queueFamilyIndex = graphicsQueueID;
-
-  if (vkCreateCommandPool(device, &commandPoolCreateInfo, NULL, &commandPool) !=
-      VK_SUCCESS) {
-    fputs("An error occured while creating the command pool;", stderr);
-    exit(EXIT_FAILURE);
-  }
-
   // Create the render pass
-  VkAttachmentDescription colorAttachment = {};
+  VkAttachmentDescription colorAttachment = { 0 };
+  colorAttachment.flags = 0;
   colorAttachment.format = imageFormat;
   colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
   colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-  colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-  colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
   colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
   colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
   colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-  VkAttachmentReference colorAttachmentReference = {};
+  VkAttachmentReference colorAttachmentReference = { 0 };
   colorAttachmentReference.attachment = 0;
   colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-  VkSubpassDescription subpass = {};
+  VkSubpassDescription subpass = { 0 };
+  subpass.flags = VK_PIPELINE_BIND_POINT_GRAPHICS;
   subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+  subpass.inputAttachmentCount = 0;
+  subpass.pInputAttachments = NULL;
   subpass.colorAttachmentCount = 1;
   subpass.pColorAttachments = &colorAttachmentReference;
+  subpass.pResolveAttachments = NULL;
+  subpass.pDepthStencilAttachment = NULL;
+  subpass.preserveAttachmentCount = 0;
+  subpass.pPreserveAttachments = NULL;
 
-  VkSubpassDependency subpassDependency = {};
+  VkSubpassDependency subpassDependency = { 0 };
   subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
   subpassDependency.dstSubpass = 0;
   subpassDependency.srcStageMask =
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-  subpassDependency.srcAccessMask = 0;
   subpassDependency.dstStageMask =
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  subpassDependency.srcAccessMask = 0;
   subpassDependency.dstAccessMask = 0;
+  subpassDependency.dependencyFlags = 0;
 
-  VkRenderPassCreateInfo renderPassCreateInfo = {};
+  VkRenderPassCreateInfo renderPassCreateInfo = { 0 };
   renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+  renderPassCreateInfo.pNext = NULL;
+  renderPassCreateInfo.flags = 0;
   renderPassCreateInfo.attachmentCount = 1;
   renderPassCreateInfo.pAttachments = &colorAttachment;
   renderPassCreateInfo.subpassCount = 1;
@@ -383,8 +405,10 @@ void flapRendererInit() {
 
   framebuffers = (VkFramebuffer *)malloc(imageCount * sizeof(VkFramebuffer));
   for (uint32_t i = 0; i < imageCount; i++) {
-    VkFramebufferCreateInfo framebufferCreateInfo = {};
+	VkFramebufferCreateInfo framebufferCreateInfo = { 0 };
     framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferCreateInfo.pNext = NULL;
+    framebufferCreateInfo.flags = 0;
     framebufferCreateInfo.renderPass = renderPass;
     framebufferCreateInfo.attachmentCount = 1;
     framebufferCreateInfo.pAttachments = &swapchainImageViews[i];
@@ -399,10 +423,24 @@ void flapRendererInit() {
     }
   }
 
+  // Create the command pool
+  VkCommandPoolCreateInfo commandPoolCreateInfo = { 0 };
+  commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+  commandPoolCreateInfo.pNext = NULL;
+  commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+  commandPoolCreateInfo.queueFamilyIndex = graphicsQueueID;
+
+  if (vkCreateCommandPool(device, &commandPoolCreateInfo, NULL, &commandPool) !=
+	  VK_SUCCESS) {
+	  fputs("An error occured while creating the command pool;", stderr);
+	  exit(EXIT_FAILURE);
+  }
+
   // Allocate the command buffers.
-  VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
+  VkCommandBufferAllocateInfo commandBufferAllocateInfo = { 0 };
   commandBufferAllocateInfo.sType =
       VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  commandBufferAllocateInfo.pNext = NULL;
   commandBufferAllocateInfo.commandPool = commandPool;
   commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
   commandBufferAllocateInfo.commandBufferCount = imageCount;
@@ -423,11 +461,14 @@ void flapRendererInit() {
       (VkSemaphore *)malloc(imageCount * sizeof(VkSemaphore));
   fences = (VkFence *)malloc(imageCount * sizeof(VkFence));
 
-  VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+  VkSemaphoreCreateInfo semaphoreCreateInfo = { 0 };
   semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+  semaphoreCreateInfo.pNext = NULL;
+  semaphoreCreateInfo.flags = 0;
 
-  VkFenceCreateInfo fenceCreateInfo = {};
+  VkFenceCreateInfo fenceCreateInfo = { 0 };
   fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  fenceCreateInfo.pNext = NULL;
   fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
   for (uint32_t i = 0; i < imageCount; i++) {
@@ -481,19 +522,29 @@ void flapRendererQuit() {
   vkDestroyInstance(instance, NULL);
 }
 
+void flapRendererCreateSwapchain() {
+
+}
+
+void flapRendererCleanupSwapchain() {
+
+}
+
 void flapRendererRender() {
   vkWaitForFences(device, 1, &fences[frameID], VK_TRUE, UINT64_MAX);
   vkResetFences(device, 1, &fences[frameID]);
 
   uint32_t imageIndex;
   vkAcquireNextImageKHR(device, swapchain, UINT64_MAX,
-                        imageAvailableSemaphores[frameID], NULL, &imageIndex);
+                        imageAvailableSemaphores[frameID], VK_NULL_HANDLE,
+                        &imageIndex);
 
   VkPipelineStageFlags waitStage =
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-  VkSubmitInfo submitInfo = {};
+  VkSubmitInfo submitInfo;
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.pNext = NULL;
   submitInfo.waitSemaphoreCount = 1;
   submitInfo.pWaitSemaphores = &imageAvailableSemaphores[imageIndex];
   submitInfo.pWaitDstStageMask = &waitStage;
@@ -508,13 +559,15 @@ void flapRendererRender() {
     exit(EXIT_FAILURE);
   }
 
-  VkPresentInfoKHR presentInfo = {};
+  VkPresentInfoKHR presentInfo;
   presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+  presentInfo.pNext = NULL;
   presentInfo.waitSemaphoreCount = 1;
   presentInfo.pWaitSemaphores = &renderFinishedSemaphores[imageIndex];
   presentInfo.swapchainCount = 1;
   presentInfo.pSwapchains = &swapchain;
   presentInfo.pImageIndices = &imageIndex;
+  presentInfo.pResults = NULL;
 
   vkQueuePresentKHR(presentQueue, &presentInfo);
 
@@ -549,17 +602,20 @@ void flapRendererRecordCommandBuffers() {
     exit(EXIT_FAILURE);
   }
 
-  VkCommandBufferBeginInfo beginInfo = {};
+  VkCommandBufferBeginInfo beginInfo = {0};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  beginInfo.pNext = NULL;
   beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+  beginInfo.pInheritanceInfo = NULL;
 
   for (uint32_t i = 0; i < imageCount; ++i) {
     vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
 
     const VkClearValue clearColor = {{{0.53f, 0.81f, 0.92f, 1.f}}};
 
-    VkRenderPassBeginInfo renderPassBeginInfo = {};
+	VkRenderPassBeginInfo renderPassBeginInfo = { 0 };
     renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.pNext = NULL;
     renderPassBeginInfo.renderPass = renderPass;
     renderPassBeginInfo.framebuffer = framebuffers[i];
     renderPassBeginInfo.renderArea.offset.x = 0;
@@ -572,26 +628,26 @@ void flapRendererRecordCommandBuffers() {
                          VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      pipeline);
+                     pipeline);
 
     VkDeviceSize offset = 0;
     vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, &vertexBuffer, &offset);
 
     vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0,
                          VK_INDEX_TYPE_UINT16);
-
-    // Draw player
+	
+	// Draw player
     vkCmdPushConstants(commandBuffers[i], pipelineLayout,
-                       VK_SHADER_STAGE_FRAGMENT_BIT, 0, 3 * sizeof(float),
-                       FLAP_BIRD_COLOR);
+                      VK_SHADER_STAGE_FRAGMENT_BIT, 0, 3 * sizeof(float),
+                      FLAP_BIRD_COLOR);
     vkCmdDrawIndexed(commandBuffers[i], 6, 1, 0, 0, 0);
 
     // Draw pipes
     vkCmdPushConstants(commandBuffers[i], pipelineLayout,
-                       VK_SHADER_STAGE_FRAGMENT_BIT, 0, 3 * sizeof(float),
-                       FLAP_PIPE_COLOR);
-    vkCmdDrawIndexed(commandBuffers[i], (1 + FLAP_NUM_PIPES * 2) * 6, 1, 6, 0,
-                     0);
+                      VK_SHADER_STAGE_FRAGMENT_BIT, 0, 3 * sizeof(float),
+                      FLAP_PIPE_COLOR);
+    vkCmdDrawIndexed(commandBuffers[i], (FLAP_NUM_PIPES * 2) * 6, 1, 6, 0,
+                    0);
 
     vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -603,11 +659,15 @@ void flapRendererCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                               VkMemoryPropertyFlags memoryProperties,
                               VkBuffer *buffer, VkDeviceMemory *bufferMemory) {
 
-  VkBufferCreateInfo bufferCreateInfo = {};
+  VkBufferCreateInfo bufferCreateInfo = { 0 };
   bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  bufferCreateInfo.pNext = NULL;
+  bufferCreateInfo.flags = 0;
   bufferCreateInfo.size = size;
   bufferCreateInfo.usage = usage;
   bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  bufferCreateInfo.queueFamilyIndexCount = 0;
+  bufferCreateInfo.pQueueFamilyIndices = NULL;
 
   vkCreateBuffer(device, &bufferCreateInfo, NULL, buffer);
 
@@ -615,18 +675,26 @@ void flapRendererCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
   vkGetBufferMemoryRequirements(device, *buffer, &memoryRequirements);
 
   uint32_t bestMemory = 0;
+  VkBool32 memoryFound = VK_FALSE;
   for (uint32_t i = 0; i < physicalDeviceMemoryProperties.memoryTypeCount;
        i++) {
     VkMemoryType memType = physicalDeviceMemoryProperties.memoryTypes[i];
-    if ((memoryProperties & (1 << i)) &&
+    if ((memoryRequirements.memoryTypeBits & (1 << i)) &&
         (memType.propertyFlags & memoryProperties)) {
       bestMemory = i;
+	  memoryFound = VK_TRUE;
+	  break;
     }
   }
+  if (memoryFound == VK_FALSE) {
+	  fputs("Allocation failed: no suitable memory type could be found!", stderr);
+	  exit(EXIT_FAILURE);
+  }
 
-  VkMemoryAllocateInfo allocateInfo = {};
+  VkMemoryAllocateInfo allocateInfo = { 0 };
   allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-  allocateInfo.allocationSize = size;
+  allocateInfo.pNext = NULL;
+  allocateInfo.allocationSize = memoryRequirements.size;
   allocateInfo.memoryTypeIndex = bestMemory;
 
   vkAllocateMemory(device, &allocateInfo, NULL, bufferMemory);

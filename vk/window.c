@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+
+#include <windows.h>
 
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
@@ -16,7 +17,10 @@ static void errorCallback(int error, const char *description) {
   fprintf(stderr, "GLFW Error: %s\n", description);
 }
 
-static void resizeCallback(GLFWwindow *window, int width, int height) {}
+static void resizeCallback(GLFWwindow *window, int width, int height) {
+	flapRendererCleanupSwapchain();
+	flapRendererCreateSwapchain();
+}
 
 static void keyCallback(GLFWwindow *window, int key, int scancode, int action,
                         int mods) {
@@ -67,10 +71,4 @@ void flapWindowRender() {
   double nextUpdate = lastUpdate + 0.16;
 
   flapRendererRender();
-
-  double now = glfwGetTime();
-  double sleepTime = nextUpdate - now;
-  if (sleepTime > 0.0) {
-    usleep((useconds_t)(sleepTime * 100000.0));
-  }
 }

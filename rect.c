@@ -16,11 +16,7 @@ static const uint16_t indices[] = {
 };
 
 flapRect *flapRectNew() {
-  flapRect *rect = &vertices[count];
-
-  ++count;
-
-  return rect;
+  return &vertices[count++];
 }
 
 flapRect *flapRectGetVertices() { return vertices; }

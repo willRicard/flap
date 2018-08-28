@@ -10,10 +10,8 @@ typedef struct {
   VkPipeline pipeline;
 } flapPipeline;
 
-flapPipeline flapPipelineCreate(const unsigned int vertexCodeSize,
-                              const unsigned char *vertexShaderSource,
-                              const unsigned int fragmentCodeSize,
-                              const unsigned char *fragmentShaderSource);
+flapPipeline flapPipelineCreate(const char *vertexShaderSource,
+                                const char *fragmentShaderSource);
 
 void flapPipelineDestroy(flapPipeline pipeline);
 

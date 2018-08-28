@@ -9,6 +9,9 @@ void flapRendererQuit();
 
 void flapRendererRender();
 
+void flapRendererCreateSwapchain();
+void flapRendererCleanupSwapchain();
+
 VkDevice flapRendererGetDevice();
 
 const VkExtent2D flapRendererGetExtent();
