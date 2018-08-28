@@ -3,9 +3,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <GL/glew.h>
 #define GL3_PROTOTYPES
+#define GLEXT_PROTOTYPES
+#ifdef _WIN32
+#include <GL/glew.h>
+#elif defined(__APPLE__)
 #include <OpenGL/gl3.h>
+#else
+#include <GL/gl.h>
+#endif
 
 #include "flap.h"
 #include "shader.h"

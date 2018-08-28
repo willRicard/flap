@@ -54,13 +54,9 @@ int main(int argc, char **argv) {
     flapWindowUpdate();
 
     if (gameState == STATE_PLAYING) {
-      if (flapWindowThrust() && speedY < 0.02f) {
-        speedY += 0.004f * dt;
-      } else {
-        speedY -= 0.001f * dt;
-      }
+      speedY += (4.0f * flapWindowThrust() - 1.0f) * dt;
 
-      flapRectMove(bird, 0, speedY);
+      flapRectMove(bird, 0, speedY * dt);
 
       if (flapRectGetY(bird) < -1.0f) {
         gameState = STATE_GAMEOVER;

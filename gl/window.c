@@ -69,6 +69,8 @@ void flapWindowQuit() {
 
 int flapWindowShouldClose() { return glfwWindowShouldClose(window); }
 
+double flapWindowGetTime() { return glfwGetTime(); }
+
 int flapWindowThrust() {
   return (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
 }
