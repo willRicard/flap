@@ -1,46 +1,21 @@
-#include "vk/pipeline.h"
+#include "pipeline_vk.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <vulkan/vulkan.h>
 
-#include "vk/renderer.h"
+#include "assets.h"
+#include "renderer_vk.h"
+#include "window.h"
 
 static VkPipelineCache pipelineCache = VK_NULL_HANDLE;
-
-static uint32_t *readFile(const char *fileName, size_t *dataSize) {
-  FILE *file = NULL;
-#ifdef _WIN32
-  fopen_s(&file, fileName, "rb");
-#else
-  file = fopen(fileName, "rb");
-#endif
-  if (file == NULL) {
-    return NULL;
-  }
-
-  fseek(file, 0, SEEK_END);
-  long size = ftell(file);
-
-  char *data = NULL;
-  data = (char *)malloc(size * sizeof(char));
-  if (data == NULL) {
-    return NULL;
-  }
-
-  rewind(file);
-  fread(data, size, 1, file);
-
-  fclose(file);
-  *dataSize = size;
-  return data;
-}
 
 static void loadPipelineCache() {
   uint32_t *initialData = NULL;
   size_t initialDataSize = 0;
-  initialData = readFile("pipeline_cache.bin", &initialDataSize);
+  initialData =
+      (uint32_t *)flapAssetsReadFile("pipeline_cache.bin", &initialDataSize);
 
   VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {0};
   pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
@@ -51,7 +26,7 @@ static void loadPipelineCache() {
 
   if (vkCreatePipelineCache(flapRendererGetDevice(), &pipelineCacheCreateInfo,
                             NULL, &pipelineCache) != VK_SUCCESS) {
-    fputs("Error creating pipeline cache.", stderr);
+    flapWindowFailWithError("Error creating pipeline cache.");
   }
   free(initialData);
 }
@@ -64,7 +39,6 @@ static void writePipelineCache() {
   cacheFile = fopen("pipeline_cache.bin", "wb");
 #endif
   if (cacheFile == NULL) {
-    fputs("Error writing pipeline cache.", stderr);
     return;
   }
 
@@ -89,17 +63,17 @@ static VkShaderModule compileShader(const char *shaderFile) {
   shaderModuleCreateInfo.flags = 0;
 
   uint32_t *shaderCode = NULL;
-  shaderCode = readFile(shaderFile, &shaderModuleCreateInfo.codeSize);
+  shaderCode = (uint32_t *)flapAssetsReadFile(shaderFile,
+                                              &shaderModuleCreateInfo.codeSize);
   if (shaderCode == NULL) {
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError("Failed reading shader code.");
   }
   shaderModuleCreateInfo.pCode = (const uint32_t *)shaderCode;
 
   VkShaderModule shaderModule = VK_NULL_HANDLE;
   if (vkCreateShaderModule(flapRendererGetDevice(), &shaderModuleCreateInfo,
                            NULL, &shaderModule) != VK_SUCCESS) {
-    fputs("Error while creating the vertex shader module.", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError("Error while creating the vertex shader module.");
   }
 
   free(shaderCode);
@@ -271,8 +245,8 @@ flapPipeline flapPipelineCreate(const char *vertexShader,
 
   if (vkCreatePipelineLayout(device, &layoutCreateInfo, NULL,
                              &pipeline.pipelineLayout) != VK_SUCCESS) {
-    fputs("An error occured while creating the pipeline layout.", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError(
+        "An error occured while creating the pipeline layout.");
   }
 
   VkGraphicsPipelineCreateInfo pipelineCreateInfo = {0};
@@ -298,11 +272,11 @@ flapPipeline flapPipelineCreate(const char *vertexShader,
 
   if (vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo,
                                 NULL, &pipeline.pipeline) != VK_SUCCESS) {
-    fputs("An error occured while creating the graphics pipeline.", NULL);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError(
+        "An error occured while creating the graphics pipeline.");
   }
 
-  writePipelineCache();
+  // writePipelineCache();
 
   return pipeline;
 }

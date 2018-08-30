@@ -14,7 +14,7 @@
 #endif
 
 #include "flap.h"
-#include "shader.h"
+#include "pipeline_gl.h"
 
 // clang-format off
 static const char *vertexShaderSource = GLSL(
@@ -36,11 +36,11 @@ void main() {
 });
 // clang-format on
 
-static flapShader shader;
+static flapPipeline shader;
 static GLuint vao = 0, vbo = 0, ebo = 0;
 
 void flapRectInit() {
-  shader = flapShaderCreate(vertexShaderSource, fragmentShaderSource);
+  shader = flapPipelineCreate(vertexShaderSource, fragmentShaderSource);
 
   glGenVertexArrays(1, &vao);
   glGenBuffers(1, &vbo);
@@ -66,7 +66,7 @@ void flapRectQuit() {
 
   glDeleteVertexArrays(1, &vao);
 
-  flapShaderDestroy(shader);
+  flapPipelineDestroy(shader);
 }
 
 void flapRectDraw() {

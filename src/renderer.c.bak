@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "flap.h"
-#include "window.h"
+#include "vk/window.h"
 
 static VkInstance instance = VK_NULL_HANDLE;
 
@@ -19,18 +19,18 @@ static VkQueue graphicsQueue, presentQueue;
 static VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 
 static VkFormat imageFormat = VK_FORMAT_UNDEFINED;
-static VkExtent2D imageExtent;
+static VkExtent2D imageExtent = {0};
 
 static uint32_t imageCount = 3, frameID = 0;
 static VkImage *swapchainImages = NULL;
 static VkImageView *swapchainImageViews = NULL;
 
-static VkRenderPass renderPass;
+static VkRenderPass renderPass = VK_NULL_HANDLE;
 
-static VkFramebuffer *framebuffers;
+static VkFramebuffer *framebuffers = NULL;
 
 static VkCommandPool commandPool = VK_NULL_HANDLE;
-static VkCommandBuffer *commandBuffers;
+static VkCommandBuffer *commandBuffers = NULL;
 
 static VkSemaphore *imageAvailableSemaphores = NULL;
 static VkSemaphore *renderFinishedSemaphores = NULL;
@@ -40,14 +40,14 @@ static VkFence *fences = NULL;
 static VkBuffer vertexBuffer = VK_NULL_HANDLE;
 static VkBuffer indexBuffer = VK_NULL_HANDLE;
 
-static VkPipeline pipeline;
-static VkPipelineLayout pipelineLayout;
+static VkPipeline pipeline = VK_NULL_HANDLE;
+static VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 
 void flapRendererInit() {
   // Create the instance
-  uint32_t surfaceExtentionCount = 0;
+  uint32_t surfaceExtensionCount = 0;
   const char **surfaceExtensions =
-      flapWindowGetExtensions(&surfaceExtentionCount);
+      flapWindowGetExtensions(&surfaceExtensionCount);
 
   VkInstance instance;
 
@@ -58,7 +58,7 @@ void flapRendererInit() {
   appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
   appInfo.pEngineName = "No Engine";
   appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-  appInfo.apiVersion = VK_MAKE_VERSION(1, 1, 0);
+  appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 
   VkInstanceCreateInfo instanceCreateInfo;
   instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -67,19 +67,18 @@ void flapRendererInit() {
   instanceCreateInfo.pApplicationInfo = &appInfo;
   instanceCreateInfo.enabledLayerCount = 0;
   instanceCreateInfo.ppEnabledLayerNames = NULL;
-  instanceCreateInfo.enabledExtensionCount = surfaceExtentionCount;
+  instanceCreateInfo.enabledExtensionCount = surfaceExtensionCount;
   instanceCreateInfo.ppEnabledExtensionNames = surfaceExtensions;
 
   VkResult result = vkCreateInstance(&instanceCreateInfo, NULL, &instance);
   if (result != VK_SUCCESS) {
-    fputs("An error occured while creating the Vulkan instance.", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError(
+        "An error occured while creating the Vulkan instance.");
   }
 
   uint32_t deviceCount = 0;
   if (vkEnumeratePhysicalDevices(instance, &deviceCount, NULL) != VK_SUCCESS) {
-    fputs("An error occured while enumerating devices.", NULL);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError("An error occured while enumerating devices.");
   }
 
   VkPhysicalDevice *devices =
@@ -87,8 +86,7 @@ void flapRendererInit() {
 
   if (vkEnumeratePhysicalDevices(instance, &deviceCount, devices) !=
       VK_SUCCESS) {
-    fputs("An error occured while enumerating devices.", NULL);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError("An error occured while enumerating devices.");
   }
 
   // Create the device.
@@ -105,8 +103,7 @@ void flapRendererInit() {
     }
   }
   if (physicalDevice == VK_NULL_HANDLE) {
-    fputs("No suitable device was found.", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError("No suitable device was found.");
   }
 
   free(devices);
@@ -115,10 +112,13 @@ void flapRendererInit() {
   vkGetPhysicalDeviceMemoryProperties(physicalDevice,
                                       &physicalDeviceMemoryProperties);
 
+  // Create the window surface
   if (flapWindowCreateSurface(instance, &surface) != VK_SUCCESS) {
-    fputs("An error occured while creating the window surface.", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError(
+        "An error occured while creating the window surface.");
   }
+
+  // Pick the best graphics & present queues
 
   uint32_t queueFamilyCount = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount,
@@ -131,7 +131,6 @@ void flapRendererInit() {
   vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount,
                                            queueFamilyProperties);
 
-  // Pick the best graphics & present queues.
   uint32_t graphicsQueueID = 0, presentQueueID = 0;
   for (uint32_t i = 0; i < queueFamilyCount; i++) {
     VkQueueFamilyProperties queueFamily = queueFamilyProperties[i];
@@ -139,8 +138,7 @@ void flapRendererInit() {
       graphicsQueueID = i;
       break;
     } else if (i == queueFamilyCount - 1) {
-      fputs("No graphics queue was found.", stderr);
-      exit(EXIT_FAILURE);
+      flapWindowFailWithError("No graphics queue was found.");
     }
   }
   for (uint32_t i = 0; i < queueFamilyCount; i++) {
@@ -151,8 +149,7 @@ void flapRendererInit() {
       presentQueueID = i;
       break;
     } else if (i == queueFamilyCount - 1) {
-      fputs("No present queue was found.", stderr);
-      exit(EXIT_FAILURE);
+      flapWindowFailWithError("No present queue was found.");
     }
   }
 
@@ -198,9 +195,13 @@ void flapRendererInit() {
   VkSurfaceCapabilitiesKHR capabilities;
   vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface,
                                             &capabilities);
+
+  // Pick the best image format
   uint32_t formatCount = 0;
   vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount,
                                        NULL);
+
+  VkSurfaceFormatKHR bestFormat;
 
   VkSurfaceFormatKHR *formats =
       (VkSurfaceFormatKHR *)malloc(formatCount * sizeof(VkSurfaceFormatKHR));
@@ -208,7 +209,26 @@ void flapRendererInit() {
   vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount,
                                        formats);
 
+  if (formatCount == 1 &&
+      formats[0].format ==
+          VK_FORMAT_UNDEFINED) { // We are free to define the format
+    bestFormat.format = VK_FORMAT_R8G8B8A8_UNORM;
+    bestFormat.colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
+  } else {
+    bestFormat = formats[0];
+  }
+
+  free(formats);
+  imageFormat = bestFormat.format;
+
+  // Choose the best present mode (see the spec, preference in descending
+  // order).
+  // 1. Mailbox
+  // 2. Immediate
+  // 3. FIFO
   uint32_t presentModeCount = 0;
+  VkPresentModeKHR bestPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+
   vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface,
                                             &presentModeCount, NULL);
 
@@ -218,23 +238,6 @@ void flapRendererInit() {
   vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface,
                                             &presentModeCount, presentModes);
 
-  VkSurfaceFormatKHR bestFormat;
-  if (formatCount == 1 &&
-      formats[0].format ==
-          VK_FORMAT_UNDEFINED) { // We are free to define the format
-    bestFormat.format = VK_FORMAT_R8G8B8A8_UNORM;
-    bestFormat.colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
-  } else {
-    bestFormat = formats[0];
-  }
-  imageFormat = bestFormat.format;
-
-  // Choose the best present mode (see the spec, preference in descending
-  // order).
-  // 1. Mailbox
-  // 2. Immediate
-  // 3. FIFO
-  VkPresentModeKHR bestPresentMode = VK_PRESENT_MODE_FIFO_KHR;
   for (uint32_t i = 0; i < presentModeCount; i++) {
     if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
       bestPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
@@ -243,6 +246,8 @@ void flapRendererInit() {
       bestPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
     }
   }
+
+  free(presentModes);
 
   // Choose the best resolution
   if (capabilities.currentExtent.width == UINT32_MAX) {
@@ -271,9 +276,6 @@ void flapRendererInit() {
     imageCount = capabilities.maxImageCount;
   }
 
-  free(presentModes);
-  free(formats);
-
   // Create the swapchain.
   VkSwapchainCreateInfoKHR swapchainCreateInfo = {0};
   swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -300,15 +302,14 @@ void flapRendererInit() {
   }
 
   swapchainCreateInfo.preTransform = capabilities.currentTransform;
-  swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+  swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
   swapchainCreateInfo.presentMode = bestPresentMode;
   swapchainCreateInfo.clipped = VK_TRUE;
   swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
   if (vkCreateSwapchainKHR(device, &swapchainCreateInfo, NULL, &swapchain) !=
       VK_SUCCESS) {
-    fputs("An error occured while creating the swapchain.", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError("An error occured while creating the swapchain.");
   }
 
   // Retrieve the swapchain images.
@@ -341,9 +342,8 @@ void flapRendererInit() {
                           &swapchainImageViews[i])
 
         != VK_SUCCESS) {
-      fputs("An error occured while creating the swapchain image views.",
-            stderr);
-      exit(EXIT_FAILURE);
+      flapWindowFailWithError(
+          "An error occured while creating the swapchain image views.");
     }
   }
 
@@ -399,8 +399,7 @@ void flapRendererInit() {
 
   if (vkCreateRenderPass(device, &renderPassCreateInfo, NULL, &renderPass) !=
       VK_SUCCESS) {
-    fputs("An error occured while creating the render pass.", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError("An error occured while creating the render pass.");
   }
 
   framebuffers = (VkFramebuffer *)malloc(imageCount * sizeof(VkFramebuffer));
@@ -418,8 +417,8 @@ void flapRendererInit() {
 
     if (vkCreateFramebuffer(device, &framebufferCreateInfo, NULL,
                             &framebuffers[i]) != VK_SUCCESS) {
-      fputs("An error occured while creating the framebuffers.", stderr);
-      exit(EXIT_FAILURE);
+      flapWindowFailWithError(
+          "An error occured while creating the framebuffers.");
     }
   }
 
@@ -432,8 +431,8 @@ void flapRendererInit() {
 
   if (vkCreateCommandPool(device, &commandPoolCreateInfo, NULL, &commandPool) !=
       VK_SUCCESS) {
-    fputs("An error occured while creating the command pool;", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError(
+        "An error occured while creating the command pool;");
   }
 
   // Allocate the command buffers.
@@ -450,8 +449,8 @@ void flapRendererInit() {
 
   if (vkAllocateCommandBuffers(device, &commandBufferAllocateInfo,
                                commandBuffers) != VK_SUCCESS) {
-    fputs("An error occured while creating the command buffers.", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError(
+        "An error occured while creating the command buffers.");
   }
 
   // Create semaphores and fences for rendering synchronization.
@@ -478,9 +477,8 @@ void flapRendererInit() {
                           &renderFinishedSemaphores[i]) != VK_SUCCESS ||
         vkCreateFence(device, &fenceCreateInfo, NULL, &fences[i]) !=
             VK_SUCCESS) {
-      fputs("An error occured while creating the rendering synchronization "
-            "primitives.",
-            stderr);
+      flapWindowFailWithError(
+          "An error occured while creating the rendering synchronization ");
     }
   }
 }
@@ -551,8 +549,7 @@ void flapRendererRender() {
 
   if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, fences[imageIndex]) !=
       VK_SUCCESS) {
-    fputs("Error submitting command buffers.", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError("Error submitting command buffers.");
   }
 
   VkPresentInfoKHR presentInfo;
@@ -566,6 +563,8 @@ void flapRendererRender() {
   presentInfo.pResults = NULL;
 
   vkQueuePresentKHR(presentQueue, &presentInfo);
+
+  vkQueueWaitIdle(presentQueue);
 
   frameID = (frameID + 1) % imageCount;
 }
@@ -588,14 +587,14 @@ void flapRendererSetIndexBuffer(VkBuffer buffer) { indexBuffer = buffer; }
 
 void flapRendererRecordCommandBuffers() {
   if (pipeline == VK_NULL_HANDLE) {
-    fputs("Recording command buffers without a graphics pipeline.", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError(
+        "Recording command buffers without a graphics pipeline.");
   } else if (vertexBuffer == VK_NULL_HANDLE) {
-    fputs("Recording command buffers without a vertex buffer.", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError(
+        "Recording command buffers without a vertex buffer.");
   } else if (indexBuffer == VK_NULL_HANDLE) {
-    fputs("Recording command buffers without an index buffer.", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError(
+        "Recording command buffers without an index buffer.");
   }
 
   VkCommandBufferBeginInfo beginInfo = {0};
@@ -682,8 +681,8 @@ void flapRendererCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     }
   }
   if (memoryFound == VK_FALSE) {
-    fputs("Allocation failed: no suitable memory type could be found!", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError(
+        "Allocation failed: no suitable memory type could be found!");
   }
 
   VkMemoryAllocateInfo allocateInfo = {0};
@@ -702,8 +701,7 @@ void flapRendererBufferData(VkDeviceMemory bufferMemory, VkDeviceSize size,
   uint8_t *destMemory;
   if (vkMapMemory(device, bufferMemory, 0, size, 0, (void *)&destMemory) !=
       VK_SUCCESS) {
-    fputs("An error occured while mapping device memory.", stderr);
-    exit(EXIT_FAILURE);
+    flapWindowFailWithError("An error occured while mapping device memory.");
   }
   memcpy(destMemory, data, (size_t)size);
   vkUnmapMemory(device, bufferMemory);

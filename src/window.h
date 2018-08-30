@@ -7,12 +7,14 @@ void flapWindowQuit();
 
 int flapWindowShouldClose();
 
-double flapWindowGetTime();
+float flapWindowGetTime();
 
-int flapWindowThrust();
+int flapWindowGetThrust();
 
 void flapWindowUpdate();
 
 void flapWindowRender();
+
+void flapWindowFailWithError(const char *error);
 
 #endif // FLAP_WINDOW_H_

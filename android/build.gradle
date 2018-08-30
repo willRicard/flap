@@ -1,0 +1,39 @@
+apply plugin: 'com.android.application'
+
+buildscript {
+  repositories {
+    google()
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.android.tools.build:gradle:3.1.4'
+  }
+}
+
+android {
+  compileSdkVersion 28
+  defaultConfig {
+    applicationId "eu.willricard.flap"
+    minSdkVersion 26
+    targetSdkVersion 28
+    versionCode 1
+    versionName "1.0"
+  }
+  externalNativeBuild {
+    ndkBuild {
+      path "Android.mk"
+    }
+  }
+  sourceSets {
+    main {
+      manifest {
+        srcFile('AndroidManifest.xml')
+      }
+      assets.srcDirs = ['../assets']
+      jniLibs {
+        // Package Vulkan validation layers
+        srcDir "C:\\Users\\guill\\AppData\\Local\\Android\\Sdk\\ndk-bundle\\sources\\third_party\\vulkan\\src\\build-android\\jniLibs"
+      }
+    }
+  }
+}

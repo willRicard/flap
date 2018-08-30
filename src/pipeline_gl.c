@@ -1,4 +1,4 @@
-#include "shader.h"
+#include "pipeline_gl.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,9 +40,9 @@ static void compileShader(GLuint shader, const char *source) {
   }
 }
 
-flapShader flapShaderCreate(const char *vertexShaderSource,
-                            const char *fragmentShaderSource) {
-  flapShader shader;
+flapPipeline flapPipelineCreate(const char *vertexShaderSource,
+                                const char *fragmentShaderSource) {
+  flapPipeline shader;
   shader.vertexShader = glCreateShader(GL_VERTEX_SHADER);
   shader.fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
   shader.program = glCreateProgram();
@@ -83,7 +83,7 @@ flapShader flapShaderCreate(const char *vertexShaderSource,
   return shader;
 }
 
-void flapShaderDestroy(flapShader shader) {
+void flapPipelineDestroy(flapPipeline shader) {
   glDeleteShader(shader.vertexShader);
   glDeleteShader(shader.fragmentShader);
   glDeleteProgram(shader.program);

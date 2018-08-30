@@ -7,8 +7,8 @@
 
 #include "flap.h"
 
-#include "vk/pipeline.h"
-#include "vk/renderer.h"
+#include "pipeline_vk.h"
+#include "renderer_vk.h"
 
 static flapPipeline pipeline;
 
@@ -24,8 +24,10 @@ static const VkDeviceSize indicesSize =
     (1 + FLAP_NUM_PIPES * 2) * 6 * sizeof(uint16_t);
 
 void flapRectInit() {
-  pipeline = flapPipelineCreate("assets/shaders/rect.vert.spv",
-                                "assets/shaders/rect.frag.spv");
+  flapRendererInit();
+
+  pipeline = flapPipelineCreate("shaders/rect.vert.spv",
+                                "shaders/rect.frag.spv");
 
   flapRendererCreateBuffer(verticesSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
@@ -55,10 +57,14 @@ void flapRectQuit() {
   vkFreeMemory(device, indexBufferMemory, NULL);
 
   flapPipelineDestroy(pipeline);
+
+  flapRendererQuit();
 }
 
 void flapRectDraw() {
   flapRendererBufferData(vertexBufferMemory, verticesSize,
                          flapRectGetVertices());
   flapRendererBufferData(indexBufferMemory, indicesSize, flapRectGetIndices());
+
+  flapRendererRender();
 }

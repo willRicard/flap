@@ -1,0 +1,9 @@
+.externalNativeBuild
+.gradle
+.idea
+build
+android.iml
+gradlew
+gradlew.bat
+gradlew.sh
+local.properties
