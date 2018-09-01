@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="eu.willricard.flap">
-  <application android:label="Flap" android:hasCode="false">
-    <activity android:name="android.app.NativeActivity"
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+package="eu.willricard.flap">
+  <application android:label="Flap" android:icon="@drawable/ic_launcher">
+    <activity android:name="eu.willricard.flap.FlapNativeActivity"
     android:label="Flap" android:configChanges="orientation">
       <meta-data android:name="android.app.lib_name"
       android:value="flap" />

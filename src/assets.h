@@ -3,6 +3,9 @@
 
 #include <stddef.h>
 
-char *flapAssetsReadFile(const char *filePath, size_t *dataSize);
+/**
+ * Read a file
+ */
+char *assets_read_file(const char *file_path, size_t *data_size);
 
 #endif // FLAP_ASSETS_H_

@@ -3,21 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define GL3_PROTOTYPES
-#define GLEXT_PROTOTYPES
-#ifdef _WIN32
 #include <GL/glew.h>
-#elif defined(__APPLE__)
-#include <OpenGL/gl3.h>
-#else
-#include <GL/gl.h>
-#endif
 
 #include "flap.h"
 #include "pipeline_gl.h"
 
 // clang-format off
-static const char *vertexShaderSource = GLSL(
+static const char *vertex_shader_source = GLSL(
 in vec2 inPos;
 uniform vec3 color;
 out vec3 fragColor;
@@ -27,7 +19,7 @@ void main() {
   fragColor = color;
 });
 
-static const char *fragmentShaderSource = GLSL(
+static const char *fragment_shader_source = GLSL(
 in vec3 fragColor;
 out vec4 outColor;
 
@@ -36,11 +28,11 @@ void main() {
 });
 // clang-format on
 
-static flapPipeline shader;
+static Pipeline pipeline;
 static GLuint vao = 0, vbo = 0, ebo = 0;
 
-void flapRectInit() {
-  shader = flapPipelineCreate(vertexShaderSource, fragmentShaderSource);
+void rect_init() {
+  pipeline = pipeline_create(vertex_shader_source, fragment_shader_source);
 
   glGenVertexArrays(1, &vao);
   glGenBuffers(1, &vbo);
@@ -52,7 +44,7 @@ void flapRectInit() {
 
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                (1 + FLAP_NUM_PIPES * 2) * 6 * sizeof(uint16_t),
-               flapRectGetIndices(), GL_STATIC_DRAW);
+               rect_get_indices(), GL_STATIC_DRAW);
 
   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float),
                         0); // in vec2 inPos;
@@ -60,26 +52,26 @@ void flapRectInit() {
   glEnableVertexAttribArray(0);
 }
 
-void flapRectQuit() {
+void rect_quit() {
   glDeleteBuffers(1, &vbo);
   glDeleteBuffers(1, &ebo);
 
   glDeleteVertexArrays(1, &vao);
 
-  flapPipelineDestroy(shader);
+  pipeline_destroy(pipeline);
 }
 
-void flapRectDraw() {
-  glUseProgram(shader.program);
+void rect_draw() {
+  glUseProgram(pipeline.program);
 
   glBindVertexArray(vao);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
-  glBufferData(GL_ARRAY_BUFFER, (1 + FLAP_NUM_PIPES * 2) * sizeof(flapRect),
-               flapRectGetVertices(), GL_DYNAMIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, (1 + FLAP_NUM_PIPES * 2) * sizeof(Rect),
+               rect_get_vertices(), GL_DYNAMIC_DRAW);
 
-  const GLuint color_location = glGetUniformLocation(shader.program, "color");
+  const GLuint color_location = glGetUniformLocation(pipeline.program, "color");
 
   glUniform3fv(color_location, 1, FLAP_BIRD_COLOR);
 

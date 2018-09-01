@@ -1,18 +1,14 @@
 #ifndef FLAP_VK_PIPELINE_H_
 #define FLAP_VK_PIPELINE_H_
+#include "pipeline.h"
 
 #include <vulkan/vulkan.h>
 
-typedef struct {
-  VkShaderModule vertexModule;
-  VkShaderModule fragmentModule;
-  VkPipelineLayout pipelineLayout;
+typedef struct Pipeline {
+  VkShaderModule vertex_module;
+  VkShaderModule fragment_module;
+  VkPipelineLayout pipeline_layout;
   VkPipeline pipeline;
-} flapPipeline;
-
-flapPipeline flapPipelineCreate(const char *vertexShaderSource,
-                                const char *fragmentShaderSource);
-
-void flapPipelineDestroy(flapPipeline pipeline);
+} Pipeline;
 
 #endif // FLAP_VK_PIPELINE_H_

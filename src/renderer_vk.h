@@ -3,35 +3,40 @@
 
 #include <vulkan/vulkan.h>
 
-void flapRendererInit();
+#include "pipeline_vk.h"
 
-void flapRendererQuit();
+/**
+ * A Vulkan renderer holds all global Vulkan objects.
+ */
 
-void flapRendererRender();
+void renderer_init();
 
-void flapRendererCreateSwapchain();
-void flapRendererCleanupSwapchain();
+void renderer_quit();
 
-VkDevice flapRendererGetDevice();
+void renderer_render();
 
-const VkExtent2D flapRendererGetExtent();
+void renderer_create_swapchain();
+void renderer_cleanup_swapchain();
 
-const VkRenderPass flapRendererGetRenderPass();
+VkDevice renderer_get_device();
 
-void flapRendererSetVertexBuffer(VkBuffer buffer);
+const VkExtent2D renderer_get_extent();
 
-void flapRendererSetIndexBuffer(VkBuffer buffer);
+const VkRenderPass renderer_get_render_pass();
 
-void flapRendererSetPipeline(VkPipeline pipeline,
-                             VkPipelineLayout pipelineLayout);
+void renderer_set_pipeline(Pipeline *pipeline);
 
-void flapRendererRecordCommandBuffers();
+void renderer_set_vertex_buffer(VkBuffer buffer);
 
-void flapRendererCreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                              VkMemoryPropertyFlags memoryProperties,
-                              VkBuffer *buffer, VkDeviceMemory *bufferMemory);
+void renderer_set_index_buffer(VkBuffer buffer);
 
-void flapRendererBufferData(VkDeviceMemory bufferMemory, VkDeviceSize size,
-                            const void *data);
+void renderer_record_command_buffers();
+
+void renderer_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
+                            VkMemoryPropertyFlags memory_properties,
+                            VkBuffer *buffer, VkDeviceMemory *buffer_memory);
+
+void renderer_buffer_data(VkDeviceMemory bufferMemory, VkDeviceSize size,
+                          const void *data);
 
 #endif // FLAP_RENDERER_H_

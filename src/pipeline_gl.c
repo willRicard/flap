@@ -6,7 +6,8 @@
 
 #include "flap.h"
 
-static void compileShader(GLuint shader, const char *source) {
+// Build a shader object from GLSL source code.
+static void compile_shader(GLuint shader, const char *source) {
   size_t len = strlen(source);
   glShaderSource(shader, 1, &source, (const GLint *)&len);
 
@@ -40,25 +41,25 @@ static void compileShader(GLuint shader, const char *source) {
   }
 }
 
-flapPipeline flapPipelineCreate(const char *vertexShaderSource,
-                                const char *fragmentShaderSource) {
-  flapPipeline shader;
-  shader.vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  shader.fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  shader.program = glCreateProgram();
+Pipeline pipeline_create(const char *vertex_shader_source,
+                         const char *fragment_shader_source) {
+  Pipeline pipeline;
+  pipeline.vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+  pipeline.fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+  pipeline.program = glCreateProgram();
 
-  compileShader(shader.vertexShader, vertexShaderSource);
-  compileShader(shader.fragmentShader, fragmentShaderSource);
+  compile_shader(pipeline.vertex_shader, vertex_shader_source);
+  compile_shader(pipeline.fragment_shader, fragment_shader_source);
 
-  glAttachShader(shader.program, shader.vertexShader);
-  glAttachShader(shader.program, shader.fragmentShader);
+  glAttachShader(pipeline.program, pipeline.vertex_shader);
+  glAttachShader(pipeline.program, pipeline.fragment_shader);
 
-  glLinkProgram(shader.program);
+  glLinkProgram(pipeline.program);
 
   GLint err;
-  glGetProgramiv(shader.program, GL_LINK_STATUS, &err);
+  glGetProgramiv(pipeline.program, GL_LINK_STATUS, &err);
   if (err != GL_TRUE) {
-    glGetProgramiv(shader.program, GL_INFO_LOG_LENGTH, &err);
+    glGetProgramiv(pipeline.program, GL_INFO_LOG_LENGTH, &err);
 
     if (err == 0) {
       fputs("No info log was provided.", stderr);
@@ -71,7 +72,7 @@ flapPipeline flapPipelineCreate(const char *vertexShaderSource,
       exit(1);
     }
 
-    glGetProgramInfoLog(shader.program, err, &err, buf);
+    glGetProgramInfoLog(pipeline.program, err, &err, buf);
 
     puts(buf);
 
@@ -80,11 +81,11 @@ flapPipeline flapPipelineCreate(const char *vertexShaderSource,
     exit(1);
   }
 
-  return shader;
+  return pipeline;
 }
 
-void flapPipelineDestroy(flapPipeline shader) {
-  glDeleteShader(shader.vertexShader);
-  glDeleteShader(shader.fragmentShader);
-  glDeleteProgram(shader.program);
+void pipeline_destroy(Pipeline pipeline) {
+  glDeleteShader(pipeline.vertex_shader);
+  glDeleteShader(pipeline.fragment_shader);
+  glDeleteProgram(pipeline.program);
 }

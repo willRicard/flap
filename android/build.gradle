@@ -30,10 +30,6 @@ android {
         srcFile('AndroidManifest.xml')
       }
       assets.srcDirs = ['../assets']
-      jniLibs {
-        // Package Vulkan validation layers
-        srcDir "C:\\Users\\guill\\AppData\\Local\\Android\\Sdk\\ndk-bundle\\sources\\third_party\\vulkan\\src\\build-android\\jniLibs"
-      }
     }
   }
 }

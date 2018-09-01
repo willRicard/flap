@@ -1,21 +1,21 @@
 #include <stdio.h>
 #include <string.h>
 
-char *flapAssetsReadFile(const char *filePath, size_t *dataSize) {
-  char fullPath[32] = {0};
+char *assets_read_file(const char *file_path, size_t *data_size) {
+  char full_path[32] = {0};
 #ifdef _WIN32
-  strncat_s(fullPath, 32, "assets/", 32);
-  strncat_s(fullPath, 32, filePath, 32);
+  strncat_s(full_path, 32, "assets/", 32);
+  strncat_s(full_path, 32, file_path, 32);
 #else
-  strncat(fullPath, "assets/", 32);
-  strncat(fullPath, filePath, 32);
+  strncat(full_path, "assets/", 32);
+  strncat(full_path, file_path, 32);
 #endif
 
   FILE *file = NULL;
 #ifdef _WIN32
-  fopen_s(&file, fullPath, "rb");
+  fopen_s(&file, full_path, "rb");
 #else
-  file = fopen(fullPath, "rb");
+  file = fopen(full_path, "rb");
 #endif
   if (file == NULL) {
     return NULL;
@@ -34,6 +34,6 @@ char *flapAssetsReadFile(const char *filePath, size_t *dataSize) {
   fread(data, size, 1, file);
 
   fclose(file);
-  *dataSize = size;
+  *data_size = size;
   return data;
 }

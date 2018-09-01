@@ -1,20 +1,24 @@
 #ifndef FLAP_WINDOW_H_
 #define FLAP_WINDOW_H_
 
-void flapWindowInit();
+/*
+ * A window for rendering.
+ */
 
-void flapWindowQuit();
+void window_init();
 
-int flapWindowShouldClose();
+void window_quit();
 
-float flapWindowGetTime();
+int window_should_close();
 
-int flapWindowGetThrust();
+float window_get_time();
 
-void flapWindowUpdate();
+int window_get_thrust();
 
-void flapWindowRender();
+void window_update();
 
-void flapWindowFailWithError(const char *error);
+void window_render();
+
+void window_fail_with_error(const char *error);
 
 #endif // FLAP_WINDOW_H_

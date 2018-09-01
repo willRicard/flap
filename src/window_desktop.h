@@ -1,12 +1,17 @@
 #ifndef FLAP_WINDOW_DESKTOP_H_
 #define FLAP_WINDOW_DESKTOP_H_
 #include "window.h"
-#include <GLFW/glfw3.h>
 
-void flapWindowDesktopInit();
+// A GLFW window.
 
-void flapWindowDesktopCreateWindow();
+typedef struct GLFWwindow GLFWwindow;
 
-GLFWwindow *flapWindowDesktopGetWindow();
+void desktop_window_init();
+
+void desktop_window_quit();
+
+void desktop_window_create_window();
+
+GLFWwindow *desktop_window_get_window();
 
 #endif // FLAP_WINDOW_DESKTOP_H_

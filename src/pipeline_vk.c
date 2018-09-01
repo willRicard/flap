@@ -9,29 +9,30 @@
 #include "renderer_vk.h"
 #include "window.h"
 
-static VkPipelineCache pipelineCache = VK_NULL_HANDLE;
+static VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
 
-static void loadPipelineCache() {
-  uint32_t *initialData = NULL;
-  size_t initialDataSize = 0;
-  initialData =
-      (uint32_t *)flapAssetsReadFile("pipeline_cache.bin", &initialDataSize);
+static void load_pipeline_cache() {
+  uint32_t *initial_data = NULL;
+  size_t initial_data_size = 0;
+  initial_data =
+      (uint32_t *)assets_read_file("pipeline_cache.bin", &initial_data_size);
 
-  VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {0};
-  pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-  pipelineCacheCreateInfo.pNext = NULL;
-  pipelineCacheCreateInfo.flags = 0;
-  pipelineCacheCreateInfo.initialDataSize = initialDataSize;
-  pipelineCacheCreateInfo.pInitialData = initialData;
+  VkPipelineCacheCreateInfo pipeline_cache_create_info = {0};
+  pipeline_cache_create_info.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+  pipeline_cache_create_info.pNext = NULL;
+  pipeline_cache_create_info.flags = 0;
+  pipeline_cache_create_info.initialDataSize = initial_data_size;
+  pipeline_cache_create_info.pInitialData = initial_data;
 
-  if (vkCreatePipelineCache(flapRendererGetDevice(), &pipelineCacheCreateInfo,
-                            NULL, &pipelineCache) != VK_SUCCESS) {
-    flapWindowFailWithError("Error creating pipeline cache.");
+  if (vkCreatePipelineCache(renderer_get_device(), &pipeline_cache_create_info,
+                            NULL, &pipeline_cache) != VK_SUCCESS) {
+    window_fail_with_error("Error creating pipeline cache.");
   }
-  free(initialData);
+  free(initial_data);
 }
 
-static void writePipelineCache() {
+static void write_pipeline_cache() {
   FILE *cacheFile = NULL;
 #ifdef _WIN32
   fopen_s(&cacheFile, "pipeline_cache.bin", "wb");
@@ -44,18 +45,18 @@ static void writePipelineCache() {
 
   size_t size;
 
-  vkGetPipelineCacheData(flapRendererGetDevice(), pipelineCache, &size, NULL);
+  vkGetPipelineCacheData(renderer_get_device(), pipeline_cache, &size, NULL);
 
   char *data = (char *)malloc(size * sizeof(char));
 
-  vkGetPipelineCacheData(flapRendererGetDevice(), pipelineCache, &size, data);
+  vkGetPipelineCacheData(renderer_get_device(), pipeline_cache, &size, data);
 
   fwrite(data, size, 1, cacheFile);
 
   fclose(cacheFile);
 }
 
-static VkShaderModule compileShader(const char *shaderFile) {
+static VkShaderModule compile_shader(const char *shaderFile) {
 
   VkShaderModuleCreateInfo shaderModuleCreateInfo = {0};
   shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -63,17 +64,17 @@ static VkShaderModule compileShader(const char *shaderFile) {
   shaderModuleCreateInfo.flags = 0;
 
   uint32_t *shaderCode = NULL;
-  shaderCode = (uint32_t *)flapAssetsReadFile(shaderFile,
-                                              &shaderModuleCreateInfo.codeSize);
+  shaderCode = (uint32_t *)assets_read_file(shaderFile,
+                                            &shaderModuleCreateInfo.codeSize);
   if (shaderCode == NULL) {
-    flapWindowFailWithError("Failed reading shader code.");
+    window_fail_with_error("Failed reading shader code.");
   }
   shaderModuleCreateInfo.pCode = (const uint32_t *)shaderCode;
 
   VkShaderModule shaderModule = VK_NULL_HANDLE;
-  if (vkCreateShaderModule(flapRendererGetDevice(), &shaderModuleCreateInfo,
-                           NULL, &shaderModule) != VK_SUCCESS) {
-    flapWindowFailWithError("Error while creating the vertex shader module.");
+  if (vkCreateShaderModule(renderer_get_device(), &shaderModuleCreateInfo, NULL,
+                           &shaderModule) != VK_SUCCESS) {
+    window_fail_with_error("Error while creating the vertex shader module.");
   }
 
   free(shaderCode);
@@ -81,26 +82,25 @@ static VkShaderModule compileShader(const char *shaderFile) {
   return shaderModule;
 }
 
-flapPipeline flapPipelineCreate(const char *vertexShader,
-                                const char *fragmentShader) {
+Pipeline pipeline_create(const char *vertexShader, const char *fragmentShader) {
 
-  if (pipelineCache == VK_NULL_HANDLE) {
-    loadPipelineCache();
+  if (pipeline_cache == VK_NULL_HANDLE) {
+    load_pipeline_cache();
   }
 
-  VkDevice device = flapRendererGetDevice();
+  VkDevice device = renderer_get_device();
 
-  flapPipeline pipeline = {0};
+  Pipeline pipeline = {0};
 
-  pipeline.vertexModule = compileShader(vertexShader);
-  pipeline.fragmentModule = compileShader(fragmentShader);
+  pipeline.vertex_module = compile_shader(vertexShader);
+  pipeline.fragment_module = compile_shader(fragmentShader);
 
   VkPipelineShaderStageCreateInfo shaderStages[2] = {{0}, {0}};
   shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
   shaderStages[0].pNext = NULL;
   shaderStages[0].flags = 0;
   shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-  shaderStages[0].module = pipeline.vertexModule;
+  shaderStages[0].module = pipeline.vertex_module;
   shaderStages[0].pName = "main";
   shaderStages[0].pSpecializationInfo = NULL;
 
@@ -108,7 +108,7 @@ flapPipeline flapPipelineCreate(const char *vertexShader,
   shaderStages[1].pNext = NULL;
   shaderStages[1].flags = 0;
   shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-  shaderStages[1].module = pipeline.fragmentModule;
+  shaderStages[1].module = pipeline.fragment_module;
   shaderStages[1].pName = "main";
   shaderStages[1].pSpecializationInfo = NULL;
 
@@ -145,13 +145,13 @@ flapPipeline flapPipelineCreate(const char *vertexShader,
   VkViewport viewport = {0};
   viewport.x = 0.0f;
   viewport.y = 0.0f;
-  viewport.width = (float)flapRendererGetExtent().width;
-  viewport.height = (float)flapRendererGetExtent().height;
+  viewport.width = (float)renderer_get_extent().width;
+  viewport.height = (float)renderer_get_extent().height;
   viewport.minDepth = 0.0f;
   viewport.maxDepth = 1.0f;
 
   VkRect2D scissor = {0};
-  scissor.extent = flapRendererGetExtent();
+  scissor.extent = renderer_get_extent();
   scissor.offset.x = 0;
   scissor.offset.y = 0;
 
@@ -244,8 +244,8 @@ flapPipeline flapPipelineCreate(const char *vertexShader,
   layoutCreateInfo.pPushConstantRanges = &pushConstantRange;
 
   if (vkCreatePipelineLayout(device, &layoutCreateInfo, NULL,
-                             &pipeline.pipelineLayout) != VK_SUCCESS) {
-    flapWindowFailWithError(
+                             &pipeline.pipeline_layout) != VK_SUCCESS) {
+    window_fail_with_error(
         "An error occured while creating the pipeline layout.");
   }
 
@@ -264,29 +264,30 @@ flapPipeline flapPipelineCreate(const char *vertexShader,
   pipelineCreateInfo.pDepthStencilState = &depthStencil;
   pipelineCreateInfo.pColorBlendState = &colorBlend;
   pipelineCreateInfo.pDynamicState = NULL;
-  pipelineCreateInfo.layout = pipeline.pipelineLayout;
-  pipelineCreateInfo.renderPass = flapRendererGetRenderPass();
+  pipelineCreateInfo.layout = pipeline.pipeline_layout;
+  pipelineCreateInfo.renderPass = renderer_get_render_pass();
   pipelineCreateInfo.subpass = 0;
   pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
   pipelineCreateInfo.basePipelineIndex = -1;
 
-  if (vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo,
+  if (vkCreateGraphicsPipelines(device, pipeline_cache, 1, &pipelineCreateInfo,
                                 NULL, &pipeline.pipeline) != VK_SUCCESS) {
-    flapWindowFailWithError(
+    window_fail_with_error(
         "An error occured while creating the graphics pipeline.");
   }
 
-  // writePipelineCache();
+  write_pipeline_cache();
 
   return pipeline;
 }
 
-void flapPipelineDestroy(flapPipeline pipeline) {
-  VkDevice device = flapRendererGetDevice();
-  vkDestroyShaderModule(device, pipeline.vertexModule, NULL);
-  vkDestroyShaderModule(device, pipeline.fragmentModule, NULL);
-  vkDestroyPipelineLayout(device, pipeline.pipelineLayout, NULL);
+void pipeline_destroy(Pipeline pipeline) {
+  VkDevice device = renderer_get_device();
+
+  vkDestroyShaderModule(device, pipeline.vertex_module, NULL);
+  vkDestroyShaderModule(device, pipeline.fragment_module, NULL);
+  vkDestroyPipelineLayout(device, pipeline.pipeline_layout, NULL);
   vkDestroyPipeline(device, pipeline.pipeline, NULL);
 
-  vkDestroyPipelineCache(device, pipelineCache, NULL);
+  vkDestroyPipelineCache(device, pipeline_cache, NULL);
 }

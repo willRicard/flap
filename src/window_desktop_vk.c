@@ -11,35 +11,45 @@
 #include "flap.h"
 #include "renderer_vk.h"
 
-static void resizeCallback(GLFWwindow *window, int width, int height) {
-  flapRendererCleanupSwapchain();
-  flapRendererCreateSwapchain();
+static void resize_callback(GLFWwindow *window, int width, int height) {
+  renderer_cleanup_swapchain();
+  renderer_create_swapchain();
 }
 
-void flapWindowInit() {
-  flapWindowDesktopInit();
+void window_init() {
+  desktop_window_init();
 
   if (!glfwVulkanSupported()) {
-    flapWindowFailWithError("Vulkan is not supported on your platform.");
+    window_fail_with_error("Vulkan is not supported on your platform.");
   }
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-  flapWindowDesktopCreateWindow();
+  desktop_window_create_window();
 
-  GLFWwindow *window = flapWindowDesktopGetWindow();
-  glfwSetFramebufferSizeCallback(window, resizeCallback);
+  GLFWwindow *window = desktop_window_get_window();
+  glfwSetFramebufferSizeCallback(window, resize_callback);
+
+  renderer_init();
 }
 
-void flapWindowUpdate() { glfwPollEvents(); }
+void window_quit() {
+  renderer_quit();
+  desktop_window_quit();
+}
 
-const char **flapWindowGetExtensions(uint32_t *extensionCount) {
+void window_update() { glfwPollEvents(); }
+
+const char **vulkan_window_get_extensions(uint32_t *extensionCount) {
   return glfwGetRequiredInstanceExtensions(extensionCount);
 }
 
-VkResult flapWindowCreateSurface(VkInstance instance, VkSurfaceKHR *surface) {
-  GLFWwindow *window = flapWindowDesktopGetWindow();
+VkResult vulkan_window_create_surface(VkInstance instance,
+                                      VkSurfaceKHR *surface) {
+  GLFWwindow *window = desktop_window_get_window();
   return glfwCreateWindowSurface(instance, window, NULL, surface);
 }
 
-void flapWindowRender() {}
+void window_render() {
+  renderer_render();
+}

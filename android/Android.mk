@@ -10,11 +10,12 @@ LOCAL_C_INCLUDES := $(FLAP_ROOT)
 
 LOCAL_SRC_FILES := $(FLAP_ROOT)/src/main.c \
 	$(FLAP_ROOT)/src/rect.c \
+	$(FLAP_ROOT)/src/assets_android.c \
+	$(FLAP_ROOT)/src/window_android.c \
+	$(FLAP_ROOT)/src/window_android_vk.c \
 	$(FLAP_ROOT)/src/renderer_vk.c \
 	$(FLAP_ROOT)/src/pipeline_vk.c \
-	$(FLAP_ROOT)/src/rect_vk.c \
-	$(FLAP_ROOT)/src/window_android_vk.c \
-	$(FLAP_ROOT)/src/assets_android.c
+	$(FLAP_ROOT)/src/rect_vk.c
 
 LOCAL_LDLIBS := -llog -landroid -lvulkan
 

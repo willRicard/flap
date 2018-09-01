@@ -7,88 +7,104 @@
 #include "rect.h"
 #include "window.h"
 
-typedef enum { STATE_PLAYING, STATE_FALLING, STATE_GAMEOVER } flapGameState;
+typedef enum { STATE_PLAYING, STATE_FALLING, STATE_GAMEOVER } GameState;
 
-int main(int argc, char **argv) {
-  srand((unsigned int)time(NULL));
+static GameState game_state = STATE_PLAYING;
+static Rect *bird;
+static Rect *pipes[FLAP_NUM_PIPES * 2];
 
-  flapWindowInit();
-  flapRectInit();
+static float speed_x = 0.0f;
+static float speed_y = 0.0f;
 
-  flapGameState gameState = STATE_PLAYING;
+static void init() {
+  game_state = STATE_PLAYING;
 
-  flapRect *bird = flapRectNew();
+  rect_set_position(bird, FLAP_BIRD_X, FLAP_BIRD_Y);
 
-  flapRectSetPosition(bird, FLAP_BIRD_X, FLAP_BIRD_Y);
-  flapRectSetSize(bird, FLAP_BIRD_WIDTH, FLAP_BIRD_HEIGHT);
-
-  flapRect *pipes[8];
   for (int i = 0; i < FLAP_NUM_PIPES * 2; i += 2) {
     float x = i * FLAP_PIPE_STEP;
     float h = FLAP_PIPE_MIN_HEIGHT +
               ((float)rand()) / ((float)RAND_MAX) *
-                  (FLAP_PIPE_MAX_HEIGHT - FLAP_PIPE_MIN_HEIGHT);
+              (FLAP_PIPE_MAX_HEIGHT - FLAP_PIPE_MIN_HEIGHT);
 
-    pipes[i] = flapRectNew();
+    rect_set_position(pipes[i], x, -1.0f);
+    rect_set_size(pipes[i], FLAP_PIPE_WIDTH, h);
 
-    flapRectSetPosition(pipes[i], x, -1.0f);
-    flapRectSetSize(pipes[i], FLAP_PIPE_WIDTH, h);
 
-    pipes[i + 1] = flapRectNew();
-    flapRectSetPosition(pipes[i + 1], x, -1.0f + h + FLAP_PIPE_OPENING);
-    flapRectSetSize(pipes[i + 1], FLAP_PIPE_WIDTH, 2.0f - h);
+    rect_set_position(pipes[i + 1], x, -1.0f + h + FLAP_PIPE_OPENING);
+    rect_set_size(pipes[i + 1], FLAP_PIPE_WIDTH, 2.0f - h);
   }
 
-  float speedX = 0.0f;
-  float speedY = 0.0f;
+  speed_x = 0.0f;
+  speed_y = 0.0f;
+}
 
-  float startTime = flapWindowGetTime();
+int main(int argc, char **argv) {
+  srand((unsigned int)time(NULL));
+
+  window_init();
+  rect_init();
+
+  bird = rect_new();
+  rect_set_size(bird, FLAP_BIRD_WIDTH, FLAP_BIRD_HEIGHT);
+
+  for (int i = 0; i < FLAP_NUM_PIPES * 2; i += 2) {
+    pipes[i] = rect_new();
+    pipes[i + 1] = rect_new();
+  }
+
+  init();
+
+  float start_time = window_get_time();
 
   int running = 1;
-  while (!flapWindowShouldClose()) {
-    float now = flapWindowGetTime();
-    float dt = now - startTime;
-    startTime = now;
+  while (!window_should_close()) {
+    float now = window_get_time();
+    float dt = now - start_time;
+    start_time = now;
 
-    flapWindowUpdate();
+    window_update();
 
-    if (gameState == STATE_PLAYING) {
-      speedY += (FLAP_THRUST * flapWindowGetThrust() - FLAP_GRAVITY) * dt;
+    if (game_state == STATE_PLAYING) {
+      speed_y += (FLAP_THRUST * window_get_thrust() - FLAP_GRAVITY) * dt;
 
       for (int i = 0; i < FLAP_NUM_PIPES; i += 2) {
-        float scrollDeltaX = FLAP_SCROLL_SPEED * dt;
-        flapRectMove(pipes[i], scrollDeltaX, 0);
-        flapRectMove(pipes[i + 1], scrollDeltaX, 0);
+        rect_move(pipes[i], FLAP_SCROLL_SPEED * dt, 0);
+        rect_move(pipes[i + 1], FLAP_SCROLL_SPEED * dt, 0);
 
-        if (flapRectGetX(pipes[i]) < -1.0f - FLAP_PIPE_WIDTH) {
-          flapRectMove(pipes[i], 2.0f + FLAP_PIPE_WIDTH, 0);
-          flapRectMove(pipes[i + 1], 2.0f + FLAP_PIPE_WIDTH, 0);
-        } else if (flapRectIntersect(bird, pipes[i]) ||
-                   flapRectIntersect(bird, pipes[i + 1])) {
-          speedX = FLAP_FALL_INITIAL_SPEED;
-          speedY = FLAP_FALL_INITIAL_SPEED;
-          gameState = STATE_FALLING;
+        if (rect_get_x(pipes[i]) < -1.0f - FLAP_PIPE_WIDTH) {
+          rect_move(pipes[i], 2.0f + FLAP_PIPE_WIDTH, 0);
+          rect_move(pipes[i + 1], 2.0f + FLAP_PIPE_WIDTH, 0);
+        } else if (rect_intersect(bird, pipes[i]) ||
+                   rect_intersect(bird, pipes[i + 1])) {
+          speed_x = FLAP_FALL_INITIAL_SPEED;
+          speed_y = FLAP_FALL_INITIAL_SPEED;
+          game_state = STATE_FALLING;
         }
       }
-      if (flapRectGetY(bird) < -1.0f) {
-        gameState = STATE_GAMEOVER;
+      if (rect_get_y(bird) < -1.0f) {
+        game_state = STATE_GAMEOVER;
       }
-    } else if (gameState == STATE_FALLING) {
-      speedY -= FLAP_GRAVITY * dt;
-      if (flapRectGetY(bird) < -1.0f) {
-        gameState = STATE_GAMEOVER;
+    } else if (game_state == STATE_FALLING) {
+      speed_y -= FLAP_GRAVITY * dt;
+      if (rect_get_y(bird) < -1.0f) {
+        game_state = STATE_GAMEOVER;
+      }
+    } else { // STATE_GAMEOVER
+      if (window_get_thrust()) {
+        init();
       }
     }
 
-    flapRectMove(bird, speedX * dt, speedY * dt);
+    rect_move(bird, speed_x * dt, speed_y * dt);
 
-    flapRectDraw();
+    rect_draw();
 
-    flapWindowRender();
+    window_render();
   }
 
-  flapRectQuit();
-  flapWindowQuit();
+  rect_quit();
+  window_quit();
 
   return 0;
 }
