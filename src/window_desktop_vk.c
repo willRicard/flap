@@ -11,11 +11,6 @@
 #include "flap.h"
 #include "renderer_vk.h"
 
-static void resize_callback(GLFWwindow *window, int width, int height) {
-  renderer_cleanup_swapchain();
-  renderer_create_swapchain();
-}
-
 void window_init() {
   desktop_window_init();
 
@@ -26,9 +21,6 @@ void window_init() {
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
   desktop_window_create_window();
-
-  GLFWwindow *window = desktop_window_get_window();
-  glfwSetFramebufferSizeCallback(window, resize_callback);
 
   renderer_init();
 }
@@ -50,6 +42,4 @@ VkResult vulkan_window_create_surface(VkInstance instance,
   return glfwCreateWindowSurface(instance, window, NULL, surface);
 }
 
-void window_render() {
-  renderer_render();
-}
+void window_render() { renderer_render(); }

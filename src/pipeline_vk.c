@@ -32,6 +32,10 @@ static void load_pipeline_cache() {
   free(initial_data);
 }
 
+void vulkan_destroy_pipeline_cache() {
+  vkDestroyPipelineCache(renderer_get_device(), pipeline_cache, NULL);
+}
+
 static void write_pipeline_cache() {
   FILE *cacheFile = NULL;
 #ifdef _WIN32
@@ -83,7 +87,6 @@ static VkShaderModule compile_shader(const char *shaderFile) {
 }
 
 Pipeline pipeline_create(const char *vertexShader, const char *fragmentShader) {
-
   if (pipeline_cache == VK_NULL_HANDLE) {
     load_pipeline_cache();
   }
@@ -95,12 +98,20 @@ Pipeline pipeline_create(const char *vertexShader, const char *fragmentShader) {
   pipeline.vertex_module = compile_shader(vertexShader);
   pipeline.fragment_module = compile_shader(fragmentShader);
 
+  vulkan_pipeline_create(&pipeline);
+
+  return pipeline;
+}
+
+void vulkan_pipeline_create(Pipeline *pipeline) {
+  VkDevice device = renderer_get_device();
+
   VkPipelineShaderStageCreateInfo shaderStages[2] = {{0}, {0}};
   shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
   shaderStages[0].pNext = NULL;
   shaderStages[0].flags = 0;
   shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-  shaderStages[0].module = pipeline.vertex_module;
+  shaderStages[0].module = pipeline->vertex_module;
   shaderStages[0].pName = "main";
   shaderStages[0].pSpecializationInfo = NULL;
 
@@ -108,7 +119,7 @@ Pipeline pipeline_create(const char *vertexShader, const char *fragmentShader) {
   shaderStages[1].pNext = NULL;
   shaderStages[1].flags = 0;
   shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-  shaderStages[1].module = pipeline.fragment_module;
+  shaderStages[1].module = pipeline->fragment_module;
   shaderStages[1].pName = "main";
   shaderStages[1].pSpecializationInfo = NULL;
 
@@ -122,7 +133,6 @@ Pipeline pipeline_create(const char *vertexShader, const char *fragmentShader) {
   vertexAttributeDescription.location = 0;
   vertexAttributeDescription.binding = 0;
   vertexAttributeDescription.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-  // vertexAttributeDescription.format = VK_FORMAT_R32G32B32_SFLOAT;
   vertexAttributeDescription.offset = 0;
 
   VkPipelineVertexInputStateCreateInfo vertexInput = {0};
@@ -244,7 +254,7 @@ Pipeline pipeline_create(const char *vertexShader, const char *fragmentShader) {
   layoutCreateInfo.pPushConstantRanges = &pushConstantRange;
 
   if (vkCreatePipelineLayout(device, &layoutCreateInfo, NULL,
-                             &pipeline.pipeline_layout) != VK_SUCCESS) {
+                             &pipeline->pipeline_layout) != VK_SUCCESS) {
     window_fail_with_error(
         "An error occured while creating the pipeline layout.");
   }
@@ -264,21 +274,19 @@ Pipeline pipeline_create(const char *vertexShader, const char *fragmentShader) {
   pipelineCreateInfo.pDepthStencilState = &depthStencil;
   pipelineCreateInfo.pColorBlendState = &colorBlend;
   pipelineCreateInfo.pDynamicState = NULL;
-  pipelineCreateInfo.layout = pipeline.pipeline_layout;
+  pipelineCreateInfo.layout = pipeline->pipeline_layout;
   pipelineCreateInfo.renderPass = renderer_get_render_pass();
   pipelineCreateInfo.subpass = 0;
   pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
   pipelineCreateInfo.basePipelineIndex = -1;
 
   if (vkCreateGraphicsPipelines(device, pipeline_cache, 1, &pipelineCreateInfo,
-                                NULL, &pipeline.pipeline) != VK_SUCCESS) {
+                                NULL, &pipeline->pipeline) != VK_SUCCESS) {
     window_fail_with_error(
         "An error occured while creating the graphics pipeline.");
   }
 
   write_pipeline_cache();
-
-  return pipeline;
 }
 
 void pipeline_destroy(Pipeline pipeline) {
@@ -286,8 +294,16 @@ void pipeline_destroy(Pipeline pipeline) {
 
   vkDestroyShaderModule(device, pipeline.vertex_module, NULL);
   vkDestroyShaderModule(device, pipeline.fragment_module, NULL);
-  vkDestroyPipelineLayout(device, pipeline.pipeline_layout, NULL);
-  vkDestroyPipeline(device, pipeline.pipeline, NULL);
 
-  vkDestroyPipelineCache(device, pipeline_cache, NULL);
+  vulkan_pipeline_destroy(&pipeline);
+}
+
+void vulkan_pipeline_destroy(Pipeline *pipeline) {
+  VkDevice device = renderer_get_device();
+
+  vkDestroyPipelineLayout(device, pipeline->pipeline_layout, NULL);
+  vkDestroyPipeline(device, pipeline->pipeline, NULL);
+
+  pipeline->pipeline_layout = VK_NULL_HANDLE;
+  pipeline->pipeline = VK_NULL_HANDLE;
 }
