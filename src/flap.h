@@ -7,14 +7,14 @@
 #define FLAP_WINDOW_HEIGHT 450
 
 // Physics
-#define FLAP_GRAVITY 1.0f
-#define FLAP_THRUST 4.0f
+#define FLAP_GRAVITY 2.0f
+#define FLAP_THRUST -0.75f
 #define FLAP_SCROLL_SPEED -0.24f
-#define FLAP_FALL_INITIAL_SPEED -0.1f
+#define FLAP_FALL_INITIAL_SPEED 0.1f
 
 // Bird
 #define FLAP_BIRD_X -0.75f
-#define FLAP_BIRD_Y 0.75f
+#define FLAP_BIRD_Y -0.75f
 #define FLAP_BIRD_WIDTH 0.08f
 #define FLAP_BIRD_HEIGHT 0.14f
 
@@ -25,7 +25,7 @@ extern const float FLAP_BIRD_COLOR[];
 #define FLAP_PIPE_WIDTH 0.12f
 #define FLAP_PIPE_MIN_HEIGHT 0.25f
 #define FLAP_PIPE_MAX_HEIGHT 1.0f
-#define FLAP_PIPE_OPENING 0.34f
+#define FLAP_PIPE_OPENING 0.32f
 #define FLAP_PIPE_STEP 0.5f
 
 extern const float FLAP_PIPE_COLOR[];

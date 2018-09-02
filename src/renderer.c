@@ -1,12 +1,12 @@
-#include "renderer_vk.h"
+#include "renderer.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "flap.h"
-#include "pipeline_vk.h"
-#include "window_vk.h"
+#include "pipeline.h"
+#include "window.h"
 
 // Vulkan context
 static VkInstance instance = VK_NULL_HANDLE;
@@ -45,7 +45,6 @@ static VkSemaphore image_available_semaphore = VK_NULL_HANDLE;
 static VkSemaphore render_finished_semaphore = VK_NULL_HANDLE;
 
 static VkBuffer vertex_buffer = VK_NULL_HANDLE;
-static VkBuffer index_buffer = VK_NULL_HANDLE;
 
 static Pipeline *pipeline = NULL;
 
@@ -53,50 +52,50 @@ void renderer_init() {
   // Create the instance
   uint32_t surface_extension_count = 0;
   const char **surface_extensions =
-      vulkan_window_get_extensions(&surface_extension_count);
+      window_get_extensions(&surface_extension_count);
 
   VkInstance instance;
 
-  VkApplicationInfo appInfo;
-  appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-  appInfo.pNext = NULL;
-  appInfo.pApplicationName = "Flap";
-  appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-  appInfo.pEngineName = "No Engine";
-  appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-  appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 0);
+  VkApplicationInfo app_info;
+  app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+  app_info.pNext = NULL;
+  app_info.pApplicationName = "Flap";
+  app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+  app_info.pEngineName = "No Engine";
+  app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+  app_info.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 
-  VkInstanceCreateInfo instanceCreateInfo;
-  instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-  instanceCreateInfo.pNext = NULL;
-  instanceCreateInfo.flags = 0;
-  instanceCreateInfo.pApplicationInfo = &appInfo;
-  instanceCreateInfo.enabledLayerCount = 0;
-  instanceCreateInfo.ppEnabledLayerNames = NULL;
-  instanceCreateInfo.enabledExtensionCount = surface_extension_count;
-  instanceCreateInfo.ppEnabledExtensionNames = surface_extensions;
+  VkInstanceCreateInfo instance_info;
+  instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+  instance_info.pNext = NULL;
+  instance_info.flags = 0;
+  instance_info.pApplicationInfo = &app_info;
+  instance_info.enabledLayerCount = 0;
+  instance_info.ppEnabledLayerNames = NULL;
+  instance_info.enabledExtensionCount = surface_extension_count;
+  instance_info.ppEnabledExtensionNames = surface_extensions;
 
-  VkResult result = vkCreateInstance(&instanceCreateInfo, NULL, &instance);
+  VkResult result = vkCreateInstance(&instance_info, NULL, &instance);
   if (result != VK_SUCCESS) {
     window_fail_with_error(
         "An error occured while creating the Vulkan instance.");
   }
 
-  uint32_t deviceCount = 0;
-  if (vkEnumeratePhysicalDevices(instance, &deviceCount, NULL) != VK_SUCCESS) {
+  uint32_t device_count = 0;
+  if (vkEnumeratePhysicalDevices(instance, &device_count, NULL) != VK_SUCCESS) {
     window_fail_with_error("An error occured while enumerating devices.");
   }
 
   VkPhysicalDevice *devices =
-      (VkPhysicalDevice *)malloc(deviceCount * sizeof(VkPhysicalDevice));
+      (VkPhysicalDevice *)malloc(device_count * sizeof(VkPhysicalDevice));
 
-  if (vkEnumeratePhysicalDevices(instance, &deviceCount, devices) !=
+  if (vkEnumeratePhysicalDevices(instance, &device_count, devices) !=
       VK_SUCCESS) {
     window_fail_with_error("An error occured while enumerating devices.");
   }
 
   // Create the device.
-  for (uint32_t i = 0; i < deviceCount; i++) {
+  for (uint32_t i = 0; i < device_count; i++) {
     VkPhysicalDeviceProperties properties;
     vkGetPhysicalDeviceProperties(devices[i], &properties);
     if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
@@ -118,7 +117,7 @@ void renderer_init() {
                                       &physical_device_memory_properties);
 
   // Create the window surface
-  if (vulkan_window_create_surface(instance, &surface) != VK_SUCCESS) {
+  if (window_create_surface(instance, &surface) != VK_SUCCESS) {
     window_fail_with_error(
         "An error occured while creating the window surface.");
   }
@@ -160,40 +159,45 @@ void renderer_init() {
 
   float priority = 1.f;
 
-  VkDeviceQueueCreateInfo queueCreateInfos[2];
+  VkDeviceQueueCreateInfo queue_infos[2];
 
-  queueCreateInfos[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-  queueCreateInfos[0].pNext = NULL;
-  queueCreateInfos[0].flags = 0;
-  queueCreateInfos[0].queueFamilyIndex = graphics_queue_id;
-  queueCreateInfos[0].queueCount = 1;
-  queueCreateInfos[0].pQueuePriorities = &priority;
+  queue_infos[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+  queue_infos[0].pNext = NULL;
+  queue_infos[0].flags = 0;
+  queue_infos[0].queueFamilyIndex = graphics_queue_id;
+  queue_infos[0].queueCount = 1;
+  queue_infos[0].pQueuePriorities = &priority;
 
-  queueCreateInfos[1].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-  queueCreateInfos[1].pNext = NULL;
-  queueCreateInfos[1].flags = 0;
-  queueCreateInfos[1].queueFamilyIndex = present_queue_id;
-  queueCreateInfos[1].queueCount = 1;
-  queueCreateInfos[1].pQueuePriorities = &priority;
+  queue_infos[1].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+  queue_infos[1].pNext = NULL;
+  queue_infos[1].flags = 0;
+  queue_infos[1].queueFamilyIndex = present_queue_id;
+  queue_infos[1].queueCount = 1;
+  queue_infos[1].pQueuePriorities = &priority;
+
+  VkPhysicalDeviceFeatures features = {0};
+  vkGetPhysicalDeviceFeatures(physical_device, &features);
 
   static const char *deviceExtension = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 
-  VkDeviceCreateInfo deviceCreateInfo = {0};
-  deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-  deviceCreateInfo.pNext = NULL;
-  deviceCreateInfo.flags = 0;
-  deviceCreateInfo.queueCreateInfoCount = 1;
-  deviceCreateInfo.pQueueCreateInfos = queueCreateInfos;
-  deviceCreateInfo.enabledLayerCount = 0;
-  deviceCreateInfo.ppEnabledLayerNames = NULL;
-  deviceCreateInfo.enabledExtensionCount = 1;
-  deviceCreateInfo.ppEnabledExtensionNames = &deviceExtension;
-  deviceCreateInfo.pEnabledFeatures = NULL;
+  VkDeviceCreateInfo device_info = {0};
+  device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+  device_info.pNext = NULL;
+  device_info.flags = 0;
+  device_info.queueCreateInfoCount = 1;
+  device_info.pQueueCreateInfos = queue_infos;
+  device_info.enabledLayerCount = 0;
+  device_info.ppEnabledLayerNames = NULL;
+  device_info.enabledExtensionCount = 1;
+  device_info.ppEnabledExtensionNames = &deviceExtension;
+  device_info.pEnabledFeatures = &features;
 
-  vkCreateDevice(physical_device, &deviceCreateInfo, NULL, &device);
+  vkCreateDevice(physical_device, &device_info, NULL, &device);
 
   vkGetDeviceQueue(device, graphics_queue_id, 0, &graphics_queue);
   vkGetDeviceQueue(device, present_queue_id, 0, &present_queue);
+
+  pipeline_cache_init();
 
   // Pick the best image format
   uint32_t formatCount = 0;
@@ -256,20 +260,20 @@ void renderer_init() {
       (VkCommandBuffer *)malloc(image_count * sizeof(VkCommandBuffer));
 
   // Create the render pass
-  VkAttachmentDescription colorAttachment = {0};
-  colorAttachment.flags = 0;
-  colorAttachment.format = image_format;
-  colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-  colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-  colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-  colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-  colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-  colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+  VkAttachmentDescription color_attachment = {0};
+  color_attachment.flags = 0;
+  color_attachment.format = image_format;
+  color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+  color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-  VkAttachmentReference colorAttachmentReference = {0};
-  colorAttachmentReference.attachment = 0;
-  colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+  VkAttachmentReference color_attachmentReference = {0};
+  color_attachmentReference.attachment = 0;
+  color_attachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
   VkSubpassDescription subpass = {0};
   subpass.flags = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -277,48 +281,48 @@ void renderer_init() {
   subpass.inputAttachmentCount = 0;
   subpass.pInputAttachments = NULL;
   subpass.colorAttachmentCount = 1;
-  subpass.pColorAttachments = &colorAttachmentReference;
+  subpass.pColorAttachments = &color_attachmentReference;
   subpass.pResolveAttachments = NULL;
   subpass.pDepthStencilAttachment = NULL;
   subpass.preserveAttachmentCount = 0;
   subpass.pPreserveAttachments = NULL;
 
-  VkSubpassDependency subpassDependency = {0};
-  subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-  subpassDependency.dstSubpass = 0;
-  subpassDependency.srcStageMask =
+  VkSubpassDependency subpass_dependency = {0};
+  subpass_dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+  subpass_dependency.dstSubpass = 0;
+  subpass_dependency.srcStageMask =
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-  subpassDependency.dstStageMask =
+  subpass_dependency.dstStageMask =
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-  subpassDependency.srcAccessMask = 0;
-  subpassDependency.dstAccessMask = 0;
-  subpassDependency.dependencyFlags = 0;
+  subpass_dependency.srcAccessMask = 0;
+  subpass_dependency.dstAccessMask = 0;
+  subpass_dependency.dependencyFlags = 0;
 
-  VkRenderPassCreateInfo renderPassCreateInfo = {0};
-  renderPassCreateInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-  renderPassCreateInfo.pNext = NULL;
-  renderPassCreateInfo.flags = 0;
-  renderPassCreateInfo.attachmentCount = 1;
-  renderPassCreateInfo.pAttachments = &colorAttachment;
-  renderPassCreateInfo.subpassCount = 1;
-  renderPassCreateInfo.pSubpasses = &subpass;
-  renderPassCreateInfo.dependencyCount = 1;
-  renderPassCreateInfo.pDependencies = &subpassDependency;
+  VkRenderPassCreateInfo render_pass_info = {0};
+  render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+  render_pass_info.pNext = NULL;
+  render_pass_info.flags = 0;
+  render_pass_info.attachmentCount = 1;
+  render_pass_info.pAttachments = &color_attachment;
+  render_pass_info.subpassCount = 1;
+  render_pass_info.pSubpasses = &subpass;
+  render_pass_info.dependencyCount = 1;
+  render_pass_info.pDependencies = &subpass_dependency;
 
-  if (vkCreateRenderPass(device, &renderPassCreateInfo, NULL, &render_pass) !=
+  if (vkCreateRenderPass(device, &render_pass_info, NULL, &render_pass) !=
       VK_SUCCESS) {
     window_fail_with_error("An error occured while creating the render pass.");
   }
 
   // Create the command pool
-  VkCommandPoolCreateInfo commandPoolCreateInfo = {0};
-  commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-  commandPoolCreateInfo.pNext = NULL;
-  commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-  commandPoolCreateInfo.queueFamilyIndex = graphics_queue_id;
+  VkCommandPoolCreateInfo pool_info = {0};
+  pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+  pool_info.pNext = NULL;
+  pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+  pool_info.queueFamilyIndex = graphics_queue_id;
 
-  if (vkCreateCommandPool(device, &commandPoolCreateInfo, NULL,
-                          &command_pool) != VK_SUCCESS) {
+  if (vkCreateCommandPool(device, &pool_info, NULL, &command_pool) !=
+      VK_SUCCESS) {
     window_fail_with_error("An error occured while creating the command pool;");
   }
 
@@ -358,7 +362,7 @@ void renderer_quit() {
   free(framebuffers);
   free(swapchain_image_views);
 
-  vulkan_destroy_pipeline_cache();
+  pipeline_cache_quit();
 
   vkDestroyDevice(device, NULL);
 
@@ -375,8 +379,8 @@ void renderer_render() {
     renderer_cleanup_swapchain();
     renderer_create_swapchain();
 
-    vulkan_pipeline_destroy(pipeline);
-    vulkan_pipeline_create(pipeline);
+    pipeline_destroy(*pipeline);
+    pipeline_create(pipeline);
 
     renderer_record_command_buffers();
 
@@ -386,40 +390,40 @@ void renderer_render() {
   VkPipelineStageFlags waitStage =
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-  VkSubmitInfo submitInfo;
-  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-  submitInfo.pNext = NULL;
-  submitInfo.waitSemaphoreCount = 1;
-  submitInfo.pWaitSemaphores = &image_available_semaphore;
-  submitInfo.pWaitDstStageMask = &waitStage;
-  submitInfo.commandBufferCount = 1;
-  submitInfo.pCommandBuffers = &command_buffers[imageIndex];
-  submitInfo.signalSemaphoreCount = 1;
-  submitInfo.pSignalSemaphores = &render_finished_semaphore;
+  VkSubmitInfo submit_info;
+  submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submit_info.pNext = NULL;
+  submit_info.waitSemaphoreCount = 1;
+  submit_info.pWaitSemaphores = &image_available_semaphore;
+  submit_info.pWaitDstStageMask = &waitStage;
+  submit_info.commandBufferCount = 1;
+  submit_info.pCommandBuffers = &command_buffers[imageIndex];
+  submit_info.signalSemaphoreCount = 1;
+  submit_info.pSignalSemaphores = &render_finished_semaphore;
 
-  if (vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) !=
+  if (vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE) !=
       VK_SUCCESS) {
     window_fail_with_error("Error submitting command buffers.");
   }
 
-  VkPresentInfoKHR presentInfo;
-  presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-  presentInfo.pNext = NULL;
-  presentInfo.waitSemaphoreCount = 1;
-  presentInfo.pWaitSemaphores = &render_finished_semaphore;
-  presentInfo.swapchainCount = 1;
-  presentInfo.pSwapchains = &swapchain;
-  presentInfo.pImageIndices = &imageIndex;
-  presentInfo.pResults = NULL;
+  VkPresentInfoKHR present_info;
+  present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+  present_info.pNext = NULL;
+  present_info.waitSemaphoreCount = 1;
+  present_info.pWaitSemaphores = &render_finished_semaphore;
+  present_info.swapchainCount = 1;
+  present_info.pSwapchains = &swapchain;
+  present_info.pImageIndices = &imageIndex;
+  present_info.pResults = NULL;
 
-  result = vkQueuePresentKHR(present_queue, &presentInfo);
+  result = vkQueuePresentKHR(present_queue, &present_info);
 
   if (result == VK_ERROR_OUT_OF_DATE_KHR) {
     renderer_cleanup_swapchain();
     renderer_create_swapchain();
 
-    vulkan_pipeline_destroy(pipeline);
-    vulkan_pipeline_create(pipeline);
+    pipeline_destroy(*pipeline);
+    pipeline_create(pipeline);
 
     renderer_record_command_buffers();
   }
@@ -455,37 +459,37 @@ void renderer_create_swapchain() {
     }
   }
 
-  VkSwapchainCreateInfoKHR swapchainCreateInfo = {0};
-  swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-  swapchainCreateInfo.pNext = NULL;
-  swapchainCreateInfo.flags = 0;
-  swapchainCreateInfo.surface = surface;
-  swapchainCreateInfo.minImageCount = image_count;
-  swapchainCreateInfo.imageFormat = image_format;
-  swapchainCreateInfo.imageColorSpace = image_color_space;
-  swapchainCreateInfo.imageExtent = image_extent;
-  swapchainCreateInfo.imageArrayLayers = 1;
-  swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+  VkSwapchainCreateInfoKHR swapchain_info = {0};
+  swapchain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+  swapchain_info.pNext = NULL;
+  swapchain_info.flags = 0;
+  swapchain_info.surface = surface;
+  swapchain_info.minImageCount = image_count;
+  swapchain_info.imageFormat = image_format;
+  swapchain_info.imageColorSpace = image_color_space;
+  swapchain_info.imageExtent = image_extent;
+  swapchain_info.imageArrayLayers = 1;
+  swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
   if (graphics_queue_id != present_queue_id) {
     uint32_t queueFamilyIndices[2] = {graphics_queue_id, present_queue_id};
 
-    swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-    swapchainCreateInfo.queueFamilyIndexCount = 2;
-    swapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndices;
+    swapchain_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+    swapchain_info.queueFamilyIndexCount = 2;
+    swapchain_info.pQueueFamilyIndices = queueFamilyIndices;
   } else {
-    swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    swapchainCreateInfo.queueFamilyIndexCount = 0;
-    swapchainCreateInfo.pQueueFamilyIndices = NULL;
+    swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_info.queueFamilyIndexCount = 0;
+    swapchain_info.pQueueFamilyIndices = NULL;
   }
 
-  swapchainCreateInfo.preTransform = swapchain_pre_transform;
-  swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-  swapchainCreateInfo.presentMode = present_mode;
-  swapchainCreateInfo.clipped = VK_TRUE;
-  swapchainCreateInfo.oldSwapchain = swapchain;
+  swapchain_info.preTransform = swapchain_pre_transform;
+  swapchain_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+  swapchain_info.presentMode = present_mode;
+  swapchain_info.clipped = VK_TRUE;
+  swapchain_info.oldSwapchain = swapchain;
 
-  if (vkCreateSwapchainKHR(device, &swapchainCreateInfo, NULL, &swapchain) !=
+  if (vkCreateSwapchainKHR(device, &swapchain_info, NULL, &swapchain) !=
       VK_SUCCESS) {
     window_fail_with_error("An error occured while creating the swapchain.");
   }
@@ -500,24 +504,25 @@ void renderer_create_swapchain() {
   vkGetSwapchainImagesKHR(device, swapchain, &image_count, swapchain_images);
 
   for (uint32_t i = 0; i < image_count; ++i) {
-    VkImageViewCreateInfo imageViewCreateInfo = {0};
-    imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    imageViewCreateInfo.pNext = NULL;
-    imageViewCreateInfo.flags = 0;
-    imageViewCreateInfo.image = swapchain_images[i];
-    imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    imageViewCreateInfo.format = image_format;
-    imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-    imageViewCreateInfo.subresourceRange.levelCount = 1;
-    imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-    imageViewCreateInfo.subresourceRange.layerCount = 1;
+    VkImageViewCreateInfo image_view_create_info = {0};
+    image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    image_view_create_info.pNext = NULL;
+    image_view_create_info.flags = 0;
+    image_view_create_info.image = swapchain_images[i];
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = image_format;
+    image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    image_view_create_info.subresourceRange.aspectMask =
+        VK_IMAGE_ASPECT_COLOR_BIT;
+    image_view_create_info.subresourceRange.baseMipLevel = 0;
+    image_view_create_info.subresourceRange.levelCount = 1;
+    image_view_create_info.subresourceRange.baseArrayLayer = 0;
+    image_view_create_info.subresourceRange.layerCount = 1;
 
-    if (vkCreateImageView(device, &imageViewCreateInfo, NULL,
+    if (vkCreateImageView(device, &image_view_create_info, NULL,
                           &swapchain_image_views[i])
 
         != VK_SUCCESS) {
@@ -525,18 +530,18 @@ void renderer_create_swapchain() {
           "An error occured while creating the swapchain image views.");
     }
 
-    VkFramebufferCreateInfo framebufferCreateInfo = {0};
-    framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferCreateInfo.pNext = NULL;
-    framebufferCreateInfo.flags = 0;
-    framebufferCreateInfo.renderPass = render_pass;
-    framebufferCreateInfo.attachmentCount = 1;
-    framebufferCreateInfo.pAttachments = &swapchain_image_views[i];
-    framebufferCreateInfo.width = image_extent.width;
-    framebufferCreateInfo.height = image_extent.height;
-    framebufferCreateInfo.layers = 1;
+    VkFramebufferCreateInfo framebuffer_info = {0};
+    framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebuffer_info.pNext = NULL;
+    framebuffer_info.flags = 0;
+    framebuffer_info.renderPass = render_pass;
+    framebuffer_info.attachmentCount = 1;
+    framebuffer_info.pAttachments = &swapchain_image_views[i];
+    framebuffer_info.width = image_extent.width;
+    framebuffer_info.height = image_extent.height;
+    framebuffer_info.layers = 1;
 
-    if (vkCreateFramebuffer(device, &framebufferCreateInfo, NULL,
+    if (vkCreateFramebuffer(device, &framebuffer_info, NULL,
                             &framebuffers[i]) != VK_SUCCESS) {
       window_fail_with_error(
           "An error occured while creating the framebuffers.");
@@ -546,16 +551,15 @@ void renderer_create_swapchain() {
   free(swapchain_images);
 
   // Allocate the command buffers.
-  VkCommandBufferAllocateInfo commandBufferAllocateInfo = {0};
-  commandBufferAllocateInfo.sType =
-      VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-  commandBufferAllocateInfo.pNext = NULL;
-  commandBufferAllocateInfo.commandPool = command_pool;
-  commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-  commandBufferAllocateInfo.commandBufferCount = image_count;
+  VkCommandBufferAllocateInfo command_buffer_info = {0};
+  command_buffer_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  command_buffer_info.pNext = NULL;
+  command_buffer_info.commandPool = command_pool;
+  command_buffer_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  command_buffer_info.commandBufferCount = image_count;
 
-  if (vkAllocateCommandBuffers(device, &commandBufferAllocateInfo,
-                               command_buffers) != VK_SUCCESS) {
+  if (vkAllocateCommandBuffers(device, &command_buffer_info, command_buffers) !=
+      VK_SUCCESS) {
     window_fail_with_error(
         "An error occured while creating the command buffers.");
   }
@@ -587,8 +591,6 @@ void renderer_set_pipeline(Pipeline *next_pipeline) {
 
 void renderer_set_vertex_buffer(VkBuffer buffer) { vertex_buffer = buffer; }
 
-void renderer_set_index_buffer(VkBuffer buffer) { index_buffer = buffer; }
-
 void renderer_record_command_buffers() {
   if (pipeline == NULL) {
     window_fail_with_error(
@@ -596,19 +598,16 @@ void renderer_record_command_buffers() {
   } else if (vertex_buffer == VK_NULL_HANDLE) {
     window_fail_with_error(
         "Recording command buffers without a vertex buffer.");
-  } else if (index_buffer == VK_NULL_HANDLE) {
-    window_fail_with_error(
-        "Recording command buffers without an index buffer.");
   }
 
-  VkCommandBufferBeginInfo beginInfo = {0};
-  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-  beginInfo.pNext = NULL;
-  beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-  beginInfo.pInheritanceInfo = NULL;
+  VkCommandBufferBeginInfo begin_info = {0};
+  begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  begin_info.pNext = NULL;
+  begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+  begin_info.pInheritanceInfo = NULL;
 
   for (uint32_t i = 0; i < image_count; ++i) {
-    vkBeginCommandBuffer(command_buffers[i], &beginInfo);
+    vkBeginCommandBuffer(command_buffers[i], &begin_info);
 
     const VkClearValue clearColor = {{{0.53f, 0.81f, 0.92f, 1.f}}};
 
@@ -632,20 +631,17 @@ void renderer_record_command_buffers() {
     VkDeviceSize offset = 0;
     vkCmdBindVertexBuffers(command_buffers[i], 0, 1, &vertex_buffer, &offset);
 
-    vkCmdBindIndexBuffer(command_buffers[i], index_buffer, 0,
-                         VK_INDEX_TYPE_UINT16);
-
     // Draw player
     vkCmdPushConstants(command_buffers[i], pipeline->pipeline_layout,
                        VK_SHADER_STAGE_FRAGMENT_BIT, 0, 3 * sizeof(float),
                        FLAP_BIRD_COLOR);
-    vkCmdDrawIndexed(command_buffers[i], 6, 1, 0, 0, 0);
+    vkCmdDraw(command_buffers[i], 1, 1, 0, 0);
 
     // Draw pipes
     vkCmdPushConstants(command_buffers[i], pipeline->pipeline_layout,
                        VK_SHADER_STAGE_FRAGMENT_BIT, 0, 3 * sizeof(float),
                        FLAP_PIPE_COLOR);
-    vkCmdDrawIndexed(command_buffers[i], (FLAP_NUM_PIPES * 2) * 6, 1, 6, 0, 0);
+    vkCmdDraw(command_buffers[i], FLAP_NUM_PIPES * 2, 1, 1, 0);
 
     vkCmdEndRenderPass(command_buffers[i]);
 
@@ -688,24 +684,24 @@ void renderer_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
         "Allocation failed: no suitable memory type could be found!");
   }
 
-  VkMemoryAllocateInfo allocateInfo = {0};
-  allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-  allocateInfo.pNext = NULL;
-  allocateInfo.allocationSize = memoryRequirements.size;
-  allocateInfo.memoryTypeIndex = bestMemory;
+  VkMemoryAllocateInfo allocate_info = {0};
+  allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  allocate_info.pNext = NULL;
+  allocate_info.allocationSize = memoryRequirements.size;
+  allocate_info.memoryTypeIndex = bestMemory;
 
-  vkAllocateMemory(device, &allocateInfo, NULL, bufferMemory);
+  vkAllocateMemory(device, &allocate_info, NULL, bufferMemory);
 
   vkBindBufferMemory(device, *buffer, *bufferMemory, 0);
 }
 
-void renderer_buffer_data(VkDeviceMemory bufferMemory, VkDeviceSize size,
+void renderer_buffer_data(VkDeviceMemory buffer_memory, VkDeviceSize size,
                           const void *data) {
-  uint8_t *destMemory;
-  if (vkMapMemory(device, bufferMemory, 0, size, 0, (void *)&destMemory) !=
+  uint8_t *dest_memory;
+  if (vkMapMemory(device, buffer_memory, 0, size, 0, (void *)&dest_memory) !=
       VK_SUCCESS) {
     window_fail_with_error("An error occured while mapping device memory.");
   }
-  memcpy(destMemory, data, (size_t)size);
-  vkUnmapMemory(device, bufferMemory);
+  memcpy(dest_memory, data, (size_t)size);
+  vkUnmapMemory(device, buffer_memory);
 }

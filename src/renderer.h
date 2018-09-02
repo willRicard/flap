@@ -3,7 +3,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "pipeline_vk.h"
+#include "pipeline.h"
 
 /**
  * A Vulkan renderer holds all global Vulkan objects.
@@ -28,15 +28,13 @@ void renderer_set_pipeline(Pipeline *pipeline);
 
 void renderer_set_vertex_buffer(VkBuffer buffer);
 
-void renderer_set_index_buffer(VkBuffer buffer);
-
 void renderer_record_command_buffers();
 
 void renderer_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
                             VkMemoryPropertyFlags memory_properties,
                             VkBuffer *buffer, VkDeviceMemory *buffer_memory);
 
-void renderer_buffer_data(VkDeviceMemory bufferMemory, VkDeviceSize size,
+void renderer_buffer_data(VkDeviceMemory buffer_memory, VkDeviceSize size,
                           const void *data);
 
 #endif // FLAP_RENDERER_H_

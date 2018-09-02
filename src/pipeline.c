@@ -1,4 +1,4 @@
-#include "pipeline_vk.h"
+#include "pipeline.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,16 +6,30 @@
 #include <vulkan/vulkan.h>
 
 #include "assets.h"
-#include "renderer_vk.h"
+#include "renderer.h"
 #include "window.h"
 
 static VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
 
-static void load_pipeline_cache() {
-  uint32_t *initial_data = NULL;
-  size_t initial_data_size = 0;
-  initial_data =
-      (uint32_t *)assets_read_file("pipeline_cache.bin", &initial_data_size);
+void pipeline_cache_init() {
+  FILE *cache_file = NULL;
+#ifdef _WIN32
+  fopen_s(&cache_file, "pipeline_cache.bin", "rb");
+#else
+  cache_file = fopen("pipeline_cache.bin", "rb");
+#endif
+
+  if (cache_file == NULL) {
+    return;
+  }
+
+  fseek(cache_file, SEEK_END, 0);
+  long initial_data_size = ftell(cache_file);
+
+  rewind(cache_file);
+
+  char *initial_data = (char *)malloc(initial_data_size * sizeof(char));
+  fread(initial_data, initial_data_size, 1, cache_file);
 
   VkPipelineCacheCreateInfo pipeline_cache_create_info = {0};
   pipeline_cache_create_info.sType =
@@ -32,124 +46,109 @@ static void load_pipeline_cache() {
   free(initial_data);
 }
 
-void vulkan_destroy_pipeline_cache() {
+void pipeline_cache_quit() {
+  FILE *cache_file = NULL;
+#ifdef _WIN32
+  fopen_s(&cache_file, "pipeline_cache.bin", "wb");
+#else
+  cache_file = fopen("pipeline_cache.bin", "wb");
+#endif
+  if (cache_file != NULL) {
+
+    size_t size;
+
+    vkGetPipelineCacheData(renderer_get_device(), pipeline_cache, &size, NULL);
+
+    char *data = (char *)malloc(size * sizeof(char));
+
+    vkGetPipelineCacheData(renderer_get_device(), pipeline_cache, &size, data);
+
+    fwrite(data, size, 1, cache_file);
+
+    fclose(cache_file);
+  }
+
   vkDestroyPipelineCache(renderer_get_device(), pipeline_cache, NULL);
 }
 
-static void write_pipeline_cache() {
-  FILE *cacheFile = NULL;
-#ifdef _WIN32
-  fopen_s(&cacheFile, "pipeline_cache.bin", "wb");
-#else
-  cacheFile = fopen("pipeline_cache.bin", "wb");
-#endif
-  if (cacheFile == NULL) {
-    return;
-  }
+VkShaderModule shader_create(const char *source_file) {
+  VkShaderModuleCreateInfo module_info = {0};
+  module_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+  module_info.pNext = NULL;
+  module_info.flags = 0;
 
-  size_t size;
-
-  vkGetPipelineCacheData(renderer_get_device(), pipeline_cache, &size, NULL);
-
-  char *data = (char *)malloc(size * sizeof(char));
-
-  vkGetPipelineCacheData(renderer_get_device(), pipeline_cache, &size, data);
-
-  fwrite(data, size, 1, cacheFile);
-
-  fclose(cacheFile);
-}
-
-static VkShaderModule compile_shader(const char *shaderFile) {
-
-  VkShaderModuleCreateInfo shaderModuleCreateInfo = {0};
-  shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-  shaderModuleCreateInfo.pNext = NULL;
-  shaderModuleCreateInfo.flags = 0;
-
-  uint32_t *shaderCode = NULL;
-  shaderCode = (uint32_t *)assets_read_file(shaderFile,
-                                            &shaderModuleCreateInfo.codeSize);
-  if (shaderCode == NULL) {
+  uint32_t *shader_code = NULL;
+  shader_code =
+      (uint32_t *)assets_read_file(source_file, &module_info.codeSize);
+  if (shader_code == NULL) {
     window_fail_with_error("Failed reading shader code.");
   }
-  shaderModuleCreateInfo.pCode = (const uint32_t *)shaderCode;
+  module_info.pCode = (const uint32_t *)shader_code;
 
-  VkShaderModule shaderModule = VK_NULL_HANDLE;
-  if (vkCreateShaderModule(renderer_get_device(), &shaderModuleCreateInfo, NULL,
-                           &shaderModule) != VK_SUCCESS) {
+  VkShaderModule module = VK_NULL_HANDLE;
+  if (vkCreateShaderModule(renderer_get_device(), &module_info, NULL,
+                           &module) != VK_SUCCESS) {
     window_fail_with_error("Error while creating the vertex shader module.");
   }
 
-  free(shaderCode);
+  free(shader_code);
 
-  return shaderModule;
+  return module;
 }
 
-Pipeline pipeline_create(const char *vertexShader, const char *fragmentShader) {
-  if (pipeline_cache == VK_NULL_HANDLE) {
-    load_pipeline_cache();
-  }
-
-  VkDevice device = renderer_get_device();
-
-  Pipeline pipeline = {0};
-
-  pipeline.vertex_module = compile_shader(vertexShader);
-  pipeline.fragment_module = compile_shader(fragmentShader);
-
-  vulkan_pipeline_create(&pipeline);
-
-  return pipeline;
+void shader_destroy(VkShaderModule module) {
+  vkDestroyShaderModule(renderer_get_device(), module, NULL);
 }
 
-void vulkan_pipeline_create(Pipeline *pipeline) {
+void pipeline_add_shader(Pipeline *pipeline, VkShaderModule shader_module,
+                         VkShaderStageFlags shader_stage) {
+  VkPipelineShaderStageCreateInfo *shader_info =
+      &pipeline->shader_stages[pipeline->num_shader_stages++];
+
+  shader_info->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  shader_info->pNext = NULL;
+  shader_info->flags = 0;
+  shader_info->stage = shader_stage;
+  shader_info->module = shader_module;
+  shader_info->pName = "main";
+  shader_info->pSpecializationInfo = NULL;
+}
+
+void pipeline_add_attribute(Pipeline *pipeline, VkFormat format,
+                            uint32_t stride) {
+  uint32_t attribute_id = pipeline->num_attributes++;
+
+  VkVertexInputAttributeDescription *attribute_description =
+      &pipeline->attribute_descriptions[attribute_id];
+  attribute_description->location = attribute_id;
+  attribute_description->binding = 0;
+  attribute_description->format = format;
+  attribute_description->offset = stride;
+}
+
+void pipeline_create(Pipeline *pipeline) {
   VkDevice device = renderer_get_device();
 
-  VkPipelineShaderStageCreateInfo shaderStages[2] = {{0}, {0}};
-  shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  shaderStages[0].pNext = NULL;
-  shaderStages[0].flags = 0;
-  shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-  shaderStages[0].module = pipeline->vertex_module;
-  shaderStages[0].pName = "main";
-  shaderStages[0].pSpecializationInfo = NULL;
-
-  shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  shaderStages[1].pNext = NULL;
-  shaderStages[1].flags = 0;
-  shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-  shaderStages[1].module = pipeline->fragment_module;
-  shaderStages[1].pName = "main";
-  shaderStages[1].pSpecializationInfo = NULL;
-
-  VkVertexInputBindingDescription vertexBindingDescription = {0};
-  vertexBindingDescription.binding = 0;
-  vertexBindingDescription.stride = 4 * sizeof(float);
-  vertexBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-  // in vec4 inPos;
-  VkVertexInputAttributeDescription vertexAttributeDescription = {0};
-  vertexAttributeDescription.location = 0;
-  vertexAttributeDescription.binding = 0;
-  vertexAttributeDescription.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-  vertexAttributeDescription.offset = 0;
+  VkVertexInputBindingDescription binding_description = {0};
+  binding_description.binding = 0;
+  binding_description.stride = 4 * sizeof(float);
+  binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
   VkPipelineVertexInputStateCreateInfo vertexInput = {0};
   vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-  vertexInput.pNext = NULL;
-  vertexInput.flags = 0;
+
   vertexInput.vertexBindingDescriptionCount = 1;
-  vertexInput.pVertexBindingDescriptions = &vertexBindingDescription;
-  vertexInput.vertexAttributeDescriptionCount = 1;
-  vertexInput.pVertexAttributeDescriptions = &vertexAttributeDescription;
+  vertexInput.pVertexBindingDescriptions = &binding_description;
+
+  vertexInput.vertexAttributeDescriptionCount = pipeline->num_attributes;
+  vertexInput.pVertexAttributeDescriptions = pipeline->attribute_descriptions;
 
   VkPipelineInputAssemblyStateCreateInfo inputAssembly = {0};
   inputAssembly.sType =
       VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
   inputAssembly.pNext = NULL;
   inputAssembly.flags = 0;
-  inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+  inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
   inputAssembly.primitiveRestartEnable = VK_FALSE;
 
   VkViewport viewport = {0};
@@ -263,8 +262,10 @@ void vulkan_pipeline_create(Pipeline *pipeline) {
   pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
   pipelineCreateInfo.pNext = NULL;
   pipelineCreateInfo.flags = 0;
-  pipelineCreateInfo.stageCount = 2;
-  pipelineCreateInfo.pStages = shaderStages;
+
+  pipelineCreateInfo.stageCount = pipeline->num_shader_stages;
+  pipelineCreateInfo.pStages = pipeline->shader_stages,
+
   pipelineCreateInfo.pVertexInputState = &vertexInput;
   pipelineCreateInfo.pInputAssemblyState = &inputAssembly;
   pipelineCreateInfo.pTessellationState = NULL;
@@ -285,25 +286,11 @@ void vulkan_pipeline_create(Pipeline *pipeline) {
     window_fail_with_error(
         "An error occured while creating the graphics pipeline.");
   }
-
-  write_pipeline_cache();
 }
 
 void pipeline_destroy(Pipeline pipeline) {
   VkDevice device = renderer_get_device();
 
-  vkDestroyShaderModule(device, pipeline.vertex_module, NULL);
-  vkDestroyShaderModule(device, pipeline.fragment_module, NULL);
-
-  vulkan_pipeline_destroy(&pipeline);
-}
-
-void vulkan_pipeline_destroy(Pipeline *pipeline) {
-  VkDevice device = renderer_get_device();
-
-  vkDestroyPipelineLayout(device, pipeline->pipeline_layout, NULL);
-  vkDestroyPipeline(device, pipeline->pipeline, NULL);
-
-  pipeline->pipeline_layout = VK_NULL_HANDLE;
-  pipeline->pipeline = VK_NULL_HANDLE;
+  vkDestroyPipelineLayout(device, pipeline.pipeline_layout, NULL);
+  vkDestroyPipeline(device, pipeline.pipeline, NULL);
 }

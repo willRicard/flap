@@ -1,11 +1,13 @@
 #include "window_android.h"
 
-#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
+#include <vulkan/vulkan_android.h>
 #include <android_native_app_glue.h>
+
+#include "renderer.h"
 
 int main(int argc, char **argv);
 
@@ -53,6 +55,12 @@ void android_main(struct android_app *app) {
   main(0, NULL);
 }
 
+void window_init() { renderer_init(); }
+
+void window_quit() { renderer_quit(); }
+
+void window_render() { renderer_render(); }
+
 void window_update() {
   int numEvents;
   struct android_poll_source *source = NULL;
@@ -75,7 +83,7 @@ float window_get_time() {
   // return (float)clock() / CLOCKS_PER_SEC;
   struct timespec t;
   clock_gettime(CLOCK_MONOTONIC, &t);
-  return (float) (t.tv_sec * 1000000000 + (float)t.tv_nsec) / 1000000000;
+  return (float)(t.tv_sec * 1000000000 + (float)t.tv_nsec) / 1000000000;
 }
 
 int window_get_thrust() { return thrust; }
@@ -103,4 +111,19 @@ void window_fail_with_error(const char *error) {
   (*env)->CallVoidMethod(env, activity, fail_with_error, error_string);
 
   (*vm)->DetachCurrentThread(vm);
+}
+
+const char **window_get_extensions(uint32_t *extensionCount) {
+  *extensionCount = 2;
+  static const char *extensions[] = {"VK_KHR_surface",
+                                     "VK_KHR_android_surface"};
+  return extensions;
+}
+
+VkResult window_create_surface(VkInstance instance, VkSurfaceKHR *surface) {
+  VkAndroidSurfaceCreateInfoKHR surface_info = {};
+  surface_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
+  surface_info.window = android_window_get_app()->window;
+
+  return vkCreateAndroidSurfaceKHR(instance, &surface_info, NULL, surface);
 }
