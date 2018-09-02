@@ -3,7 +3,6 @@
 #include <stdlib.h>
 
 #include "flap.h"
-#include "renderer.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -58,13 +57,9 @@ void window_init() {
   window = glfwCreateWindow(FLAP_WINDOW_WIDTH, FLAP_WINDOW_HEIGHT, "Flap", NULL,
                             NULL);
   glfwSetKeyCallback(window, key_callback);
-
-  renderer_init();
 }
 
 void window_quit() {
-  renderer_quit();
-
   glfwDestroyWindow(window);
   glfwTerminate();
 }
@@ -75,9 +70,6 @@ const char **window_get_extensions(uint32_t *extensionCount) {
   return glfwGetRequiredInstanceExtensions(extensionCount);
 }
 
-VkResult window_create_surface(VkInstance instance,
-                                      VkSurfaceKHR *surface) {
+VkResult window_create_surface(VkInstance instance, VkSurfaceKHR *surface) {
   return glfwCreateWindowSurface(instance, window, NULL, surface);
 }
-
-void window_render() { renderer_render(); }

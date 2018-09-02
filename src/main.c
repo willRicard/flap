@@ -5,6 +5,7 @@
 #include "flap.h"
 
 #include "rect.h"
+#include "renderer.h"
 #include "window.h"
 
 typedef enum { STATE_PLAYING, STATE_FALLING, STATE_GAMEOVER } GameState;
@@ -49,6 +50,7 @@ int main(int argc, char **argv) {
   srand((unsigned int)time(NULL));
 
   window_init();
+  renderer_init();
   rect_init();
 
   bird = rect_new();
@@ -114,10 +116,11 @@ int main(int argc, char **argv) {
 
     rect_draw();
 
-    window_render();
+    renderer_render();
   }
 
   rect_quit();
+  renderer_quit();
   window_quit();
 
   return 0;

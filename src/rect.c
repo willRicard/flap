@@ -45,10 +45,31 @@ void rect_init() {
                              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                          &vertex_buffer, &vertex_buffer_memory);
 
-  renderer_set_pipeline(&pipeline);
-  renderer_set_vertex_buffer(vertex_buffer);
+  uint32_t command_buffer_count = 0;
+  VkCommandBuffer *command_buffers =
+      renderer_begin_command_buffers(&command_buffer_count);
 
-  renderer_record_command_buffers();
+  for (uint32_t i = 0; i < command_buffer_count; i++) {
+    vkCmdBindPipeline(command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                      pipeline.pipeline);
+
+    VkDeviceSize offset = 0;
+    vkCmdBindVertexBuffers(command_buffers[i], 0, 1, &vertex_buffer, &offset);
+
+    // Draw player
+    vkCmdPushConstants(command_buffers[i], pipeline.pipeline_layout,
+                       VK_SHADER_STAGE_FRAGMENT_BIT, 0, 3 * sizeof(float),
+                       FLAP_BIRD_COLOR);
+    vkCmdDraw(command_buffers[i], 1, 1, 0, 0);
+
+    // Draw pipes
+    vkCmdPushConstants(command_buffers[i], pipeline.pipeline_layout,
+                       VK_SHADER_STAGE_FRAGMENT_BIT, 0, 3 * sizeof(float),
+                       FLAP_PIPE_COLOR);
+    vkCmdDraw(command_buffers[i], FLAP_NUM_PIPES * 2, 1, 1, 0);
+  }
+
+  renderer_end_command_buffers();
 }
 
 void rect_quit() {

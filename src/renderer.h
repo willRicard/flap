@@ -28,7 +28,9 @@ void renderer_set_pipeline(Pipeline *pipeline);
 
 void renderer_set_vertex_buffer(VkBuffer buffer);
 
-void renderer_record_command_buffers();
+VkCommandBuffer *renderer_begin_command_buffers(uint32_t *buffer_count);
+
+void renderer_end_command_buffers();
 
 void renderer_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
                             VkMemoryPropertyFlags memory_properties,
