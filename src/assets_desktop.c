@@ -1,14 +1,15 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 char *assets_read_file(const char *file_path, size_t *data_size) {
   char full_path[32] = {0};
 #ifdef _WIN32
-  strncat_s(full_path, 32, "assets/", 32);
-  strncat_s(full_path, 32, file_path, 32);
+  strncat_s(full_path, 32, "assets/", 31);
+  strncat_s(full_path, 32, file_path, 31);
 #else
-  strncat(full_path, "assets/", 32);
-  strncat(full_path, file_path, 32);
+  strncat(full_path, "assets/", 31);
+  strncat(full_path, file_path, 31);
 #endif
 
   FILE *file = NULL;
