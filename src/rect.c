@@ -38,6 +38,9 @@ void rect_init() {
   pipeline_add_attribute(&pipeline, VK_FORMAT_R32G32_SFLOAT, 0);
   pipeline_add_attribute(&pipeline, VK_FORMAT_R32G32_SFLOAT, 2 * sizeof(float));
 
+  pipeline_add_push_constant(&pipeline, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                             3 * sizeof(float));
+
   pipeline_create(&pipeline);
 
   renderer_create_buffer(vertices_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,

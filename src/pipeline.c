@@ -126,6 +126,16 @@ void pipeline_add_attribute(Pipeline *pipeline, VkFormat format,
   attribute_description->offset = stride;
 }
 
+void pipeline_add_push_constant(Pipeline *pipeline,
+                                VkShaderStageFlags shader_stage,
+                                VkDeviceSize offset, VkDeviceSize size) {
+  VkPushConstantRange *push_constant_range =
+      &pipeline->push_constants[pipeline->num_push_constants++];
+  push_constant_range->stageFlags = shader_stage;
+  push_constant_range->offset = offset;
+  push_constant_range->size = size;
+}
+
 void pipeline_create(Pipeline *pipeline) {
   VkDevice device = renderer_get_device();
 
@@ -237,20 +247,14 @@ void pipeline_create(Pipeline *pipeline) {
   colorBlend.attachmentCount = 1;
   colorBlend.pAttachments = &colorBlendAttachment;
 
-  // Uniform color
-  VkPushConstantRange pushConstantRange = {0};
-  pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-  pushConstantRange.offset = 0;
-  pushConstantRange.size = 3 * sizeof(float);
-
   VkPipelineLayoutCreateInfo layoutCreateInfo = {0};
   layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
   layoutCreateInfo.pNext = NULL;
   layoutCreateInfo.flags = 0;
   layoutCreateInfo.setLayoutCount = 0;
   layoutCreateInfo.pSetLayouts = NULL;
-  layoutCreateInfo.pushConstantRangeCount = 1;
-  layoutCreateInfo.pPushConstantRanges = &pushConstantRange;
+  layoutCreateInfo.pushConstantRangeCount = pipeline->num_push_constants;
+  layoutCreateInfo.pPushConstantRanges = pipeline->push_constants;
 
   if (vkCreatePipelineLayout(device, &layoutCreateInfo, NULL,
                              &pipeline->pipeline_layout) != VK_SUCCESS) {
