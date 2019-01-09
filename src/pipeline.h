@@ -9,13 +9,14 @@ typedef struct Pipeline {
   uint32_t num_attributes;
   VkVertexInputAttributeDescription attribute_descriptions[2];
 
-  uint32_t num_descriptor_layouts;
-  VkDescriptorSetLayout descriptor_set_layouts[1];
+  uint32_t num_set_layouts;
+  VkDescriptorSetLayout set_layouts[1];
 
   uint32_t num_push_constants;
   VkPushConstantRange push_constants[1];
 
   VkPipelineLayout pipeline_layout;
+
   VkPipeline pipeline;
 } Pipeline;
 
@@ -40,10 +41,18 @@ void pipeline_add_shader(Pipeline *pipeline, VkShaderModule shader_module,
 void pipeline_add_attribute(Pipeline *pipeline, VkFormat format,
                             uint32_t stride);
 
+// Add a uniform buffer object to a given shader stage.
+void pipeline_add_uniform_buffer(Pipeline *pipeline,
+                                 VkShaderStageFlags shader_stage);
+
 // Add a push constant range to a given shader stage.
 void pipeline_add_push_constant(Pipeline *pipeline,
                                 VkShaderStageFlags shader_stage,
                                 VkDeviceSize offset, VkDeviceSize size);
+
+// Add a descriptor set layout.
+void pipeline_add_set_layout(Pipeline *pipeline,
+                             VkDescriptorSetLayout set_layout);
 
 // Create the pipeline and pipeline layout.
 void pipeline_create(Pipeline *pipeline);

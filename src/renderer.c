@@ -13,6 +13,7 @@ static VkInstance instance = VK_NULL_HANDLE;
 
 static VkDevice device = VK_NULL_HANDLE;
 static VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+static VkPhysicalDeviceProperties physical_device_properties = {0};
 static VkPhysicalDeviceMemoryProperties physical_device_memory_properties;
 
 static VkSurfaceKHR surface = VK_NULL_HANDLE;
@@ -66,11 +67,8 @@ void renderer_init() {
   instance_info.enabledExtensionCount = surface_extension_count;
   instance_info.ppEnabledExtensionNames = surface_extensions;
 
-  VkResult result = vkCreateInstance(&instance_info, NULL, &instance);
-  if (result != VK_SUCCESS) {
-    window_fail_with_error(
-        "An error occured while creating the Vulkan instance.");
-  }
+  VK_CHECK(vkCreateInstance(&instance_info, NULL, &instance),
+           "An error occured while creating the Vulkan instance.")
 
   uint32_t device_count = 0;
   if (vkEnumeratePhysicalDevices(instance, &device_count, NULL) != VK_SUCCESS) {
@@ -80,19 +78,17 @@ void renderer_init() {
   VkPhysicalDevice *devices =
       (VkPhysicalDevice *)malloc(device_count * sizeof(VkPhysicalDevice));
 
-  if (vkEnumeratePhysicalDevices(instance, &device_count, devices) !=
-      VK_SUCCESS) {
-    window_fail_with_error("An error occured while enumerating devices.");
-  }
+  VK_CHECK(vkEnumeratePhysicalDevices(instance, &device_count, devices),
+           "An error occured while enumerating devices.")
 
   // Create the device.
   for (uint32_t i = 0; i < device_count; i++) {
-    VkPhysicalDeviceProperties properties;
-    vkGetPhysicalDeviceProperties(devices[i], &properties);
-    if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+    vkGetPhysicalDeviceProperties(devices[i], &physical_device_properties);
+    if (physical_device_properties.deviceType ==
+        VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
       physical_device = devices[i];
       break;
-    } else if (properties.deviceType ==
+    } else if (physical_device_properties.deviceType ==
                VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
       physical_device = devices[i];
     }
@@ -108,10 +104,8 @@ void renderer_init() {
                                       &physical_device_memory_properties);
 
   // Create the window surface
-  if (window_create_surface(instance, &surface) != VK_SUCCESS) {
-    window_fail_with_error(
-        "An error occured while creating the window surface.");
-  }
+  VK_CHECK(window_create_surface(instance, &surface),
+           "An error occured while creating the window surface.")
 
   // Pick the best graphics & present queues
   uint32_t queue_family_count = 0;
@@ -280,10 +274,8 @@ void renderer_init() {
   render_pass_info.dependencyCount = 1;
   render_pass_info.pDependencies = &subpass_dependency;
 
-  if (vkCreateRenderPass(device, &render_pass_info, NULL, &render_pass) !=
-      VK_SUCCESS) {
-    window_fail_with_error("An error occured while creating the render pass.");
-  }
+  VK_CHECK(vkCreateRenderPass(device, &render_pass_info, NULL, &render_pass),
+           "An error occured while creating the render pass.")
 
   // Create the command pool
   VkCommandPoolCreateInfo pool_info = {0};
@@ -291,10 +283,8 @@ void renderer_init() {
   pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
   pool_info.queueFamilyIndex = graphics_queue_id;
 
-  if (vkCreateCommandPool(device, &pool_info, NULL, &command_pool) !=
-      VK_SUCCESS) {
-    window_fail_with_error("An error occured while creating the command pool;");
-  }
+  VK_CHECK(vkCreateCommandPool(device, &pool_info, NULL, &command_pool),
+           "An error occured while creating the command pool;");
 
   renderer_create_swapchain();
 
@@ -302,13 +292,12 @@ void renderer_init() {
   VkSemaphoreCreateInfo semaphoreCreateInfo = {0};
   semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-  if (vkCreateSemaphore(device, &semaphoreCreateInfo, NULL,
-                        &image_available_semaphore) != VK_SUCCESS ||
-      vkCreateSemaphore(device, &semaphoreCreateInfo, NULL,
-                        &render_finished_semaphore) != VK_SUCCESS) {
-    window_fail_with_error(
-        "An error occured while creating the rendering synchronization ");
-  }
+  VK_CHECK(vkCreateSemaphore(device, &semaphoreCreateInfo, NULL,
+                             &image_available_semaphore),
+           "An error occured while creating the 'image available' semaphore.")
+  VK_CHECK(vkCreateSemaphore(device, &semaphoreCreateInfo, NULL,
+                             &render_finished_semaphore),
+           "An error occured while creating the 'render finished' semaphore.")
 }
 
 void renderer_quit() {
@@ -365,10 +354,8 @@ void renderer_render() {
   submit_info.signalSemaphoreCount = 1;
   submit_info.pSignalSemaphores = &render_finished_semaphore;
 
-  if (vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE) !=
-      VK_SUCCESS) {
-    window_fail_with_error("Error submitting command buffers.");
-  }
+  VK_CHECK(vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE),
+           "Error submitting command buffers.")
 
   VkPresentInfoKHR present_info = {0};
   present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -446,10 +433,8 @@ void renderer_create_swapchain() {
   swapchain_info.clipped = VK_TRUE;
   swapchain_info.oldSwapchain = swapchain;
 
-  if (vkCreateSwapchainKHR(device, &swapchain_info, NULL, &swapchain) !=
-      VK_SUCCESS) {
-    window_fail_with_error("An error occured while creating the swapchain.");
-  }
+  VK_CHECK(vkCreateSwapchainKHR(device, &swapchain_info, NULL, &swapchain),
+           "An error occured while creating the swapchain.")
 
   // Retrieve the swapchain images.
   vkGetSwapchainImagesKHR(device, swapchain, &image_count, NULL);
@@ -477,13 +462,9 @@ void renderer_create_swapchain() {
     image_view_create_info.subresourceRange.baseArrayLayer = 0;
     image_view_create_info.subresourceRange.layerCount = 1;
 
-    if (vkCreateImageView(device, &image_view_create_info, NULL,
-                          &swapchain_image_views[i])
-
-        != VK_SUCCESS) {
-      window_fail_with_error(
-          "An error occured while creating the swapchain image views.");
-    }
+    VK_CHECK(vkCreateImageView(device, &image_view_create_info, NULL,
+                               &swapchain_image_views[i]),
+             "An error occured while creating the swapchain image views.")
 
     VkFramebufferCreateInfo framebuffer_info = {0};
     framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -494,11 +475,9 @@ void renderer_create_swapchain() {
     framebuffer_info.height = image_extent.height;
     framebuffer_info.layers = 1;
 
-    if (vkCreateFramebuffer(device, &framebuffer_info, NULL,
-                            &framebuffers[i]) != VK_SUCCESS) {
-      window_fail_with_error(
-          "An error occured while creating the framebuffers.");
-    }
+    VK_CHECK(
+        vkCreateFramebuffer(device, &framebuffer_info, NULL, &framebuffers[i]),
+        "An error occured while creating the framebuffers.")
   }
 
   free(swapchain_images);
@@ -510,11 +489,9 @@ void renderer_create_swapchain() {
   command_buffer_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
   command_buffer_info.commandBufferCount = image_count;
 
-  if (vkAllocateCommandBuffers(device, &command_buffer_info, command_buffers) !=
-      VK_SUCCESS) {
-    window_fail_with_error(
-        "An error occured while creating the command buffers.");
-  }
+  VK_CHECK(
+      vkAllocateCommandBuffers(device, &command_buffer_info, command_buffers),
+      "An error occured while creating the command buffers.")
 }
 
 void renderer_cleanup_swapchain() {
@@ -533,9 +510,50 @@ void renderer_cleanup_swapchain() {
 
 VkDevice renderer_get_device() { return device; }
 
+VkPhysicalDeviceProperties renderer_get_physical_device_properties() {
+  return physical_device_properties;
+}
+
+VkPhysicalDeviceMemoryProperties
+renderer_get_physical_device_memory_properties() {
+  return physical_device_memory_properties;
+}
+
+uint32_t renderer_get_image_count() { return image_count; }
+
 const VkExtent2D renderer_get_extent() { return image_extent; }
 
-const VkRenderPass renderer_get_render_pass() { return render_pass; }
+VkRenderPass renderer_get_render_pass() { return render_pass; }
+
+VkCommandBuffer *renderer_begin_command_buffer() {
+  VkCommandBuffer *command_buffer = NULL;
+
+  VkCommandBufferAllocateInfo command_buffer_info = {0};
+  command_buffer_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  command_buffer_info.commandPool = command_pool;
+  command_buffer_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  command_buffer_info.commandBufferCount = 1;
+
+  VK_CHECK(
+      vkAllocateCommandBuffers(device, &command_buffer_info, command_buffer),
+      "An error occured while creating the command buffers.")
+
+  return command_buffer;
+}
+
+void renderer_end_command_buffer(VkCommandBuffer *command_buffer) {
+  vkEndCommandBuffer(*command_buffer);
+
+  VkSubmitInfo submit_info = {0};
+  submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submit_info.commandBufferCount = 1;
+  submit_info.pCommandBuffers = command_buffer;
+
+  vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+  vkQueueWaitIdle(graphics_queue);
+
+  vkFreeCommandBuffers(device, command_pool, 1, command_buffer);
+}
 
 VkCommandBuffer *renderer_begin_command_buffers(uint32_t *buffer_count) {
   *buffer_count = image_count;
@@ -568,56 +586,4 @@ void renderer_end_command_buffers() {
     vkCmdEndRenderPass(command_buffers[i]);
     vkEndCommandBuffer(command_buffers[i]);
   }
-}
-
-void renderer_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                            VkMemoryPropertyFlags memory_properties,
-                            VkBuffer *buffer, VkDeviceMemory *buffer_memory) {
-  VkBufferCreateInfo buffer_info = {0};
-  buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-  buffer_info.size = size;
-  buffer_info.usage = usage;
-  buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-  vkCreateBuffer(device, &buffer_info, NULL, buffer);
-
-  VkMemoryRequirements memory_requirements;
-  vkGetBufferMemoryRequirements(device, *buffer, &memory_requirements);
-
-  uint32_t best_memory = 0;
-  VkBool32 memory_found = VK_FALSE;
-  for (uint32_t i = 0; i < physical_device_memory_properties.memoryTypeCount;
-       i++) {
-    VkMemoryType memType = physical_device_memory_properties.memoryTypes[i];
-    if ((memory_requirements.memoryTypeBits & (1 << i)) &&
-        (memType.propertyFlags & memory_properties)) {
-      best_memory = i;
-      memory_found = VK_TRUE;
-      break;
-    }
-  }
-  if (memory_found == VK_FALSE) {
-    window_fail_with_error(
-        "Allocation failed: no suitable memory type could be found!");
-  }
-
-  VkMemoryAllocateInfo allocate_info = {0};
-  allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-  allocate_info.allocationSize = memory_requirements.size;
-  allocate_info.memoryTypeIndex = best_memory;
-
-  vkAllocateMemory(device, &allocate_info, NULL, buffer_memory);
-
-  vkBindBufferMemory(device, *buffer, *buffer_memory, 0);
-}
-
-void renderer_buffer_data(VkDeviceMemory buffer_memory, VkDeviceSize size,
-                          const void *data) {
-  uint8_t *dest_memory;
-  if (vkMapMemory(device, buffer_memory, 0, size, 0, (void *)&dest_memory) !=
-      VK_SUCCESS) {
-    window_fail_with_error("An error occured while mapping device memory.");
-  }
-  memcpy(dest_memory, data, (size_t)size);
-  vkUnmapMemory(device, buffer_memory);
 }

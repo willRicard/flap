@@ -7,11 +7,11 @@ find_package(Vulkan REQUIRED)
 
 add_executable(flap
   src/main.c
-  src/rect.c
   src/assets_desktop.c
   src/window_desktop.c
   src/window_desktop.c
   src/renderer.c
+  src/buffer.c
   src/pipeline.c
   src/rect.c)
 

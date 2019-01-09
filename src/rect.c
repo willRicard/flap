@@ -1,6 +1,7 @@
 #include "rect.h"
 #include <vulkan/vulkan.h>
 
+#include "buffer.h"
 #include "flap.h"
 #include "pipeline.h"
 #include "renderer.h"
@@ -21,7 +22,7 @@ static VkShaderModule fragment_shader = VK_NULL_HANDLE;
 
 static Pipeline pipeline = {0};
 
-static VkBuffer vertex_buffer = VK_NULL_HANDLE;
+static Buffer vertex_buffer = {0};
 
 static VkDeviceMemory vertex_buffer_memory = VK_NULL_HANDLE;
 
@@ -43,10 +44,8 @@ void rect_init() {
 
   pipeline_create(&pipeline);
 
-  renderer_create_buffer(vertices_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                         &vertex_buffer, &vertex_buffer_memory);
+  buffer_create(&vertex_buffer, vertices_size,
+                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, BUFFER_TYPE_HOST_BUFFER);
 
   uint32_t command_buffer_count = 0;
   VkCommandBuffer *command_buffers =
@@ -57,7 +56,8 @@ void rect_init() {
                       pipeline.pipeline);
 
     VkDeviceSize offset = 0;
-    vkCmdBindVertexBuffers(command_buffers[i], 0, 1, &vertex_buffer, &offset);
+    vkCmdBindVertexBuffers(command_buffers[i], 0, 1, &vertex_buffer.buffer,
+                           &offset);
 
     // Draw player
     vkCmdPushConstants(command_buffers[i], pipeline.pipeline_layout,
@@ -79,8 +79,7 @@ void rect_quit() {
   VkDevice device = renderer_get_device();
   vkDeviceWaitIdle(device);
 
-  vkDestroyBuffer(device, vertex_buffer, NULL);
-  vkFreeMemory(device, vertex_buffer_memory, NULL);
+  buffer_destroy(&vertex_buffer);
 
   shader_destroy(vertex_shader);
   shader_destroy(geometry_shader);
@@ -89,10 +88,7 @@ void rect_quit() {
   pipeline_destroy(pipeline);
 }
 
-void rect_draw() {
-  renderer_buffer_data(vertex_buffer_memory, vertices_size,
-                       rect_get_vertices());
-}
+void rect_draw() { buffer_write(vertex_buffer, vertices_size, vertices); }
 
 Rect *rect_new() { return &vertices[count++]; }
 

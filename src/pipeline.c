@@ -55,7 +55,7 @@ void pipeline_cache_quit() {
 #endif
   if (cache_file != NULL) {
 
-    size_t size;
+    size_t size = 0;
 
     vkGetPipelineCacheData(renderer_get_device(), pipeline_cache, &size, NULL);
 
@@ -134,6 +134,11 @@ void pipeline_add_push_constant(Pipeline *pipeline,
   push_constant_range->stageFlags = shader_stage;
   push_constant_range->offset = offset;
   push_constant_range->size = size;
+}
+
+void pipeline_add_set_layout(Pipeline *pipeline,
+                             VkDescriptorSetLayout set_layout) {
+  pipeline->set_layouts[pipeline->num_set_layouts++] = set_layout;
 }
 
 void pipeline_create(Pipeline *pipeline) {
@@ -251,8 +256,8 @@ void pipeline_create(Pipeline *pipeline) {
   layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
   layoutCreateInfo.pNext = NULL;
   layoutCreateInfo.flags = 0;
-  layoutCreateInfo.setLayoutCount = 0;
-  layoutCreateInfo.pSetLayouts = NULL;
+  layoutCreateInfo.setLayoutCount = pipeline->num_set_layouts;
+  layoutCreateInfo.pSetLayouts = pipeline->set_layouts;
   layoutCreateInfo.pushConstantRangeCount = pipeline->num_push_constants;
   layoutCreateInfo.pPushConstantRanges = pipeline->push_constants;
 

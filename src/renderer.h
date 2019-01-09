@@ -20,23 +20,25 @@ void renderer_cleanup_swapchain();
 
 VkDevice renderer_get_device();
 
+VkPhysicalDeviceProperties renderer_get_physical_device_properties();
+
+VkPhysicalDeviceMemoryProperties
+renderer_get_physical_device_memory_properties();
+
+uint32_t renderer_get_image_count();
+
 const VkExtent2D renderer_get_extent();
 
-const VkRenderPass renderer_get_render_pass();
+VkRenderPass renderer_get_render_pass();
 
 void renderer_set_pipeline(Pipeline *pipeline);
 
-void renderer_set_vertex_buffer(VkBuffer buffer);
+VkCommandBuffer *renderer_begin_command_buffer();
+
+void renderer_end_command_buffer(VkCommandBuffer *command_buffer);
 
 VkCommandBuffer *renderer_begin_command_buffers(uint32_t *buffer_count);
 
 void renderer_end_command_buffers();
-
-void renderer_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
-                            VkMemoryPropertyFlags memory_properties,
-                            VkBuffer *buffer, VkDeviceMemory *buffer_memory);
-
-void renderer_buffer_data(VkDeviceMemory buffer_memory, VkDeviceSize size,
-                          const void *data);
 
 #endif // FLAP_RENDERER_H_
