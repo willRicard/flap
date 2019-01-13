@@ -107,15 +107,16 @@ void staged_buffer_create(Buffer *buffer, VkDeviceSize size,
                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
   make_vk_buffer(&buffer->staging_buffer, &buffer->staging_memory, size,
-                 usage | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                 usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-  bind_vk_buffer(buffer->buffer, buffer->memory, size, &buffer->data);
+  bind_vk_buffer(buffer->buffer, buffer->memory, size, (void **)&buffer->data);
+
+  bind_vk_buffer(buffer->staging_buffer, buffer->staging_memory, size, NULL);
 }
 
 void staged_buffer_write(Buffer buffer, VkDeviceSize size, const void *data) {
   memcpy(buffer.data, data, (size_t)size);
-
   copy_vk_buffer(buffer.buffer, buffer.staging_buffer, size);
 }
 
@@ -132,6 +133,7 @@ void device_buffer_create(Buffer *buffer, VkDeviceSize size,
   make_vk_buffer(&buffer->buffer, &buffer->memory, size,
                  usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+  bind_vk_buffer(buffer->buffer, buffer->memory, size, NULL);
 }
 
 void device_buffer_write(Buffer buffer, VkDeviceSize size, const void *data) {
