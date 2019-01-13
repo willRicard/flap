@@ -2,11 +2,14 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <windows.h>
 
 #include "flap.h"
 #include "renderer.h"
 #include "window.h"
 
+// Create a VkBuffer, then allocate and bind VkDeviceMemory matching the buffer
+// memory requirements.
 static void make_vk_buffer(VkBuffer *buffer, VkDeviceMemory *memory,
                            VkDeviceSize size, VkBufferUsageFlags usage,
                            VkMemoryPropertyFlags memory_properties) {
@@ -49,25 +52,17 @@ static void make_vk_buffer(VkBuffer *buffer, VkDeviceMemory *memory,
   allocate_info.memoryTypeIndex = best_memory;
 
   vkAllocateMemory(device, &allocate_info, NULL, memory);
+  vkBindBufferMemory(device, *buffer, *memory, 0);
 }
 
+// Destroy a VkBuffer and free the bound VkDeviceMemory.
 static void free_vk_buffer(VkBuffer buffer, VkDeviceMemory memory) {
   VkDevice device = renderer_get_device();
-  vkUnmapMemory(device, memory);
-  vkFreeMemory(device, memory, NULL);
   vkDestroyBuffer(device, buffer, NULL);
+  vkFreeMemory(device, memory, NULL);
 }
 
-static void bind_vk_buffer(VkBuffer buffer, VkDeviceMemory memory,
-                           VkDeviceSize size, void **data) {
-  VkDevice device = renderer_get_device();
-
-  vkBindBufferMemory(device, buffer, memory, 0);
-
-  VK_CHECK(vkMapMemory(device, memory, 0, size, 0, data),
-           "An error occured while mapping device memory.")
-}
-
+// Synchronously copy data from one VkBuffer to another.
 static void copy_vk_buffer(VkBuffer src_buf, VkBuffer dst_buf,
                            VkDeviceSize size) {
   VkCommandBuffer *cmd_buf = renderer_begin_command_buffer();
@@ -87,7 +82,9 @@ void host_buffer_create(Buffer *buffer, VkDeviceSize size,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-  bind_vk_buffer(buffer->buffer, buffer->memory, size, &buffer->data);
+  VK_CHECK(vkMapMemory(renderer_get_device(), buffer->memory, 0, size, 0,
+                       (void **)&buffer->data),
+           "An error occured while mapping device memory.")
 }
 
 void host_buffer_write(Buffer buffer, VkDeviceSize size, const void *data) {
@@ -95,6 +92,7 @@ void host_buffer_write(Buffer buffer, VkDeviceSize size, const void *data) {
 }
 
 void host_buffer_destroy(Buffer *buffer) {
+  vkUnmapMemory(renderer_get_device(), buffer->memory);
   free_vk_buffer(buffer->buffer, buffer->memory);
 }
 
@@ -102,26 +100,27 @@ void staged_buffer_create(Buffer *buffer, VkDeviceSize size,
                           VkBufferUsageFlags usage) {
 
   make_vk_buffer(&buffer->buffer, &buffer->memory, size,
-                 usage | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-  make_vk_buffer(&buffer->staging_buffer, &buffer->staging_memory, size,
                  usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-  bind_vk_buffer(buffer->buffer, buffer->memory, size, (void **)&buffer->data);
+  make_vk_buffer(&buffer->staging_buffer, &buffer->staging_memory, size,
+                 usage | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 
-  bind_vk_buffer(buffer->staging_buffer, buffer->staging_memory, size, NULL);
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+  VK_CHECK(vkMapMemory(renderer_get_device(), buffer->staging_memory, 0, size,
+                       0, (void **)&buffer->data),
+           "An error occured while mapping device memory.")
 }
 
 void staged_buffer_write(Buffer buffer, VkDeviceSize size, const void *data) {
   memcpy(buffer.data, data, (size_t)size);
-  copy_vk_buffer(buffer.buffer, buffer.staging_buffer, size);
+  copy_vk_buffer(buffer.staging_buffer, buffer.buffer, size);
 }
 
 void staged_buffer_destroy(Buffer *buffer) {
-  VkDevice device = device;
+  vkUnmapMemory(renderer_get_device(), buffer->staging_memory);
 
   free_vk_buffer(buffer->buffer, buffer->memory);
   free_vk_buffer(buffer->staging_buffer, buffer->staging_memory);
@@ -129,21 +128,31 @@ void staged_buffer_destroy(Buffer *buffer) {
 
 void device_buffer_create(Buffer *buffer, VkDeviceSize size,
                           VkBufferUsageFlags usage) {
-
   make_vk_buffer(&buffer->buffer, &buffer->memory, size,
                  usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-  bind_vk_buffer(buffer->buffer, buffer->memory, size, NULL);
 }
 
 void device_buffer_write(Buffer buffer, VkDeviceSize size, const void *data) {
+  VkDevice device = renderer_get_device();
+
   VkBuffer tmp_buf = VK_NULL_HANDLE;
   VkDeviceMemory tmp_mem = VK_NULL_HANDLE;
+  void *tmp_data = NULL;
 
   make_vk_buffer(&tmp_buf, &tmp_mem, size,
                  buffer.usage | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+  vkMapMemory(renderer_get_device(), tmp_mem, 0, size, 0, &tmp_data);
+
+  memcpy(tmp_data, data, size);
+
+  copy_vk_buffer(tmp_buf, buffer.buffer, size);
+
+  vkUnmapMemory(device, tmp_mem);
+  free_vk_buffer(tmp_buf, tmp_mem);
 }
 
 void device_buffer_destroy(Buffer *buffer) {
