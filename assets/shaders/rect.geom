@@ -1,6 +1,4 @@
-#version 440 core
-#extension GL_ARB_separate_shader_objects : enable
-
+#version 450
 layout(points) in;
 
 layout(triangle_strip, max_vertices = 4) out;

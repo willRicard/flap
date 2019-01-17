@@ -1,5 +1,4 @@
-#version 440 core
-#extension GL_ARB_separate_shader_objects : enable
+#version 450
 
 layout(push_constant) uniform PushConstants {
   vec3 color; 

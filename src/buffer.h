@@ -18,9 +18,6 @@ typedef struct Buffer {
 
   VkBuffer staging_buffer;
   VkDeviceMemory staging_memory;
-
-  VkBuffer gpu_buffer;
-  VkDeviceMemory gpu_memory;
 } Buffer;
 
 void buffer_create(Buffer *buf, VkDeviceSize size, VkBufferUsageFlags usage,

@@ -35,9 +35,26 @@ void rect_init() {
   pipeline_add_shader(&pipeline, geometry_shader, VK_SHADER_STAGE_GEOMETRY_BIT);
   pipeline_add_shader(&pipeline, fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-  // in vec2 in_pos;
-  pipeline_add_attribute(&pipeline, VK_FORMAT_R32G32_SFLOAT, 0);
-  pipeline_add_attribute(&pipeline, VK_FORMAT_R32G32_SFLOAT, 2 * sizeof(float));
+  VkVertexInputBindingDescription vertex_binding = {0};
+  vertex_binding.binding = 0;
+  vertex_binding.stride = 4 * sizeof(float);
+  vertex_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+  VkVertexInputAttributeDescription vertex_pos_attr = {0};
+  vertex_pos_attr.location = 0;
+  vertex_pos_attr.binding = 0;
+  vertex_pos_attr.format = VK_FORMAT_R32G32_SFLOAT;
+  vertex_pos_attr.offset = 0;
+
+  VkVertexInputAttributeDescription vertex_size_attr = {0};
+  vertex_size_attr.location = 1;
+  vertex_size_attr.binding = 0;
+  vertex_size_attr.format = VK_FORMAT_R32G32_SFLOAT;
+  vertex_size_attr.offset = 2 * sizeof(float);
+
+  VkVertexInputAttributeDescription attributes[] = {vertex_pos_attr,
+                                                    vertex_size_attr};
+  pipeline_add_attributes(&pipeline, 1, &vertex_binding, 2, attributes);
 
   pipeline_add_push_constant(&pipeline, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                              3 * sizeof(float));

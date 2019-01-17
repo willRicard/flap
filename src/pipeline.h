@@ -2,12 +2,22 @@
 #define FLAP_PIPELINE_H_
 #include <vulkan/vulkan.h>
 
+// A versatile Pipeline object with convenient defaults
 typedef struct Pipeline {
   uint32_t num_shader_stages;
   VkPipelineShaderStageCreateInfo shader_stages[3];
 
+  uint32_t num_bindings;
   uint32_t num_attributes;
-  VkVertexInputAttributeDescription attribute_descriptions[2];
+  VkVertexInputBindingDescription *bindings;
+  VkVertexInputAttributeDescription *attributes;
+
+  uint32_t num_vertex_attributes;
+  uint32_t num_instance_attributes;
+  uint32_t vertex_attribute_stride;
+  uint32_t instance_attribute_stride;
+  VkVertexInputAttributeDescription vertex_attributes[3];
+  VkVertexInputAttributeDescription instance_attributes[2];
 
   uint32_t num_set_layouts;
   VkDescriptorSetLayout set_layouts[1];
@@ -37,9 +47,12 @@ void shader_destroy(VkShaderModule module);
 void pipeline_add_shader(Pipeline *pipeline, VkShaderModule shader_module,
                          VkShaderStageFlags shader_stage);
 
-// Add a vertex attribute.
-void pipeline_add_attribute(Pipeline *pipeline, VkFormat format,
-                            uint32_t stride);
+// Add vertex or instance attributes
+void pipeline_add_attributes(Pipeline *pipeline,
+                             uint32_t num_attribute_bindings,
+                             VkVertexInputBindingDescription *bindings,
+                             uint32_t num_attributes,
+                             VkVertexInputAttributeDescription *attributes);
 
 // Add a uniform buffer object to a given shader stage.
 void pipeline_add_uniform_buffer(Pipeline *pipeline,

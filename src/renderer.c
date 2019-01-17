@@ -526,7 +526,7 @@ const VkExtent2D renderer_get_extent() { return image_extent; }
 VkRenderPass renderer_get_render_pass() { return render_pass; }
 
 VkCommandBuffer *renderer_begin_command_buffer() {
-  VkCommandBuffer *command_buffer = NULL;
+  VkCommandBuffer *command_buffer = (VkCommandBuffer*) malloc(sizeof(VkCommandBuffer));
 
   VkCommandBufferAllocateInfo command_buffer_info = {0};
   command_buffer_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -535,8 +535,14 @@ VkCommandBuffer *renderer_begin_command_buffer() {
   command_buffer_info.commandBufferCount = 1;
 
   VK_CHECK(
-      vkAllocateCommandBuffers(device, &command_buffer_info, command_buffer),
-      "An error occured while creating the command buffers.")
+	  vkAllocateCommandBuffers(device, &command_buffer_info, command_buffer),
+	  "An error occured while creating the command buffers.")
+
+  VkCommandBufferBeginInfo begin_info = { 0 };
+  begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+  vkBeginCommandBuffer(*command_buffer, &begin_info);
 
   return command_buffer;
 }
@@ -549,10 +555,11 @@ void renderer_end_command_buffer(VkCommandBuffer *command_buffer) {
   submit_info.commandBufferCount = 1;
   submit_info.pCommandBuffers = command_buffer;
 
-  vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+  VK_CHECK(vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE), "Error submitting (one-time) command buffers.")
   vkQueueWaitIdle(graphics_queue);
 
   vkFreeCommandBuffers(device, command_pool, 1, command_buffer);
+  free(command_buffer);
 }
 
 VkCommandBuffer *renderer_begin_command_buffers(uint32_t *buffer_count) {

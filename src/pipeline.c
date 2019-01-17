@@ -114,16 +114,14 @@ void pipeline_add_shader(Pipeline *pipeline, VkShaderModule shader_module,
   shader_info->pSpecializationInfo = NULL;
 }
 
-void pipeline_add_attribute(Pipeline *pipeline, VkFormat format,
-                            uint32_t stride) {
-  uint32_t attribute_id = pipeline->num_attributes++;
-
-  VkVertexInputAttributeDescription *attribute_description =
-      &pipeline->attribute_descriptions[attribute_id];
-  attribute_description->location = attribute_id;
-  attribute_description->binding = 0;
-  attribute_description->format = format;
-  attribute_description->offset = stride;
+void pipeline_add_attributes(Pipeline *pipeline, uint32_t num_bindings,
+                             VkVertexInputBindingDescription *bindings,
+                             uint32_t num_attributes,
+                             VkVertexInputAttributeDescription *attributes) {
+  pipeline->num_attributes = num_attributes;
+  pipeline->num_bindings = num_bindings;
+  pipeline->bindings = bindings;
+  pipeline->attributes = attributes;
 }
 
 void pipeline_add_push_constant(Pipeline *pipeline,
@@ -146,17 +144,22 @@ void pipeline_create(Pipeline *pipeline) {
 
   VkVertexInputBindingDescription binding_description = {0};
   binding_description.binding = 0;
-  binding_description.stride = 4 * sizeof(float);
+  binding_description.stride = pipeline->vertex_attribute_stride;
   binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+  VkVertexInputBindingDescription instance_description = {0};
+  instance_description.binding = 0;
+  instance_description.stride = pipeline->instance_attribute_stride;
+  instance_description.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
   VkPipelineVertexInputStateCreateInfo vertexInput = {0};
   vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-  vertexInput.vertexBindingDescriptionCount = 1;
-  vertexInput.pVertexBindingDescriptions = &binding_description;
+  vertexInput.vertexBindingDescriptionCount = pipeline->num_bindings;
+  vertexInput.pVertexBindingDescriptions = pipeline->bindings;
 
   vertexInput.vertexAttributeDescriptionCount = pipeline->num_attributes;
-  vertexInput.pVertexAttributeDescriptions = pipeline->attribute_descriptions;
+  vertexInput.pVertexAttributeDescriptions = pipeline->attributes;
 
   VkPipelineInputAssemblyStateCreateInfo inputAssembly = {0};
   inputAssembly.sType =
