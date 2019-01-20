@@ -1,12 +1,6 @@
 #ifndef FLAP_FLAP_H
 #define FLAP_FLAP_H
 
-#define VK_CHECK(fn, err_msg)                                                  \
-  if (fn != VK_SUCCESS) {                                                      \
-    window_fail_with_error(err_msg);                                           \
-    exit(EXIT_FAILURE);                                                        \
-  }
-
 // Window
 #define FLAP_WINDOW_TITLE "Flap"
 #define FLAP_WINDOW_WIDTH 800

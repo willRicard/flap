@@ -1,5 +1,5 @@
-#ifndef FLAP_ASSETS_H_
-#define FLAP_ASSETS_H_
+#ifndef FLAP_ASSETS_H
+#define FLAP_ASSETS_H
 
 #include <stddef.h>
 
@@ -9,4 +9,4 @@
  */
 char *assets_read_file(const char *file_path, size_t *data_size);
 
-#endif // FLAP_ASSETS_H_
+#endif // FLAP_ASSETS_H

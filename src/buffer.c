@@ -4,6 +4,7 @@
 #include <string.h>
 #include <windows.h>
 
+#include "error.h"
 #include "flap.h"
 #include "renderer.h"
 #include "window.h"
@@ -42,7 +43,7 @@ static void make_vk_buffer(VkBuffer *buffer, VkDeviceMemory *memory,
     }
   }
   if (memory_found == VK_FALSE) {
-    window_fail_with_error(
+    fail_with_error(
         "Allocation failed: no suitable memory type could be found!");
   }
 

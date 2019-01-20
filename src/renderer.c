@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "error.h"
 #include "flap.h"
 #include "pipeline.h"
 #include "window.h"
@@ -71,9 +72,8 @@ void renderer_init() {
            "An error occured while creating the Vulkan instance.")
 
   uint32_t device_count = 0;
-  if (vkEnumeratePhysicalDevices(instance, &device_count, NULL) != VK_SUCCESS) {
-    window_fail_with_error("An error occured while enumerating devices.");
-  }
+  VK_CHECK(vkEnumeratePhysicalDevices(instance, &device_count, NULL),
+           "vkEnumeratePhysicalDevices");
 
   VkPhysicalDevice *devices =
       (VkPhysicalDevice *)malloc(device_count * sizeof(VkPhysicalDevice));
@@ -94,7 +94,7 @@ void renderer_init() {
     }
   }
   if (physical_device == VK_NULL_HANDLE) {
-    window_fail_with_error("No suitable device was found.");
+    fail_with_error("No suitable device was found.");
   }
 
   free(devices);
@@ -125,7 +125,7 @@ void renderer_init() {
       graphics_queue_id = i;
       break;
     } else if (i == queue_family_count - 1) {
-      window_fail_with_error("No graphics queue was found.");
+      fail_with_error("No graphics queue was found.");
     }
   }
   for (uint32_t i = 0; i < queue_family_count; i++) {
@@ -136,7 +136,7 @@ void renderer_init() {
       present_queue_id = i;
       break;
     } else if (i == queue_family_count - 1) {
-      window_fail_with_error("No present queue was found.");
+      fail_with_error("No present queue was found.");
     }
   }
 

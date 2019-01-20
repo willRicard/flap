@@ -20,7 +20,7 @@ int window_get_thrust() {
   return (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
 }
 
-void window_fail_with_error(const char *error) {
+void fail_with_error(const char *error) {
 #ifdef _WIN32
   MessageBox(NULL, error, "Error", MB_ICONERROR | MB_OK);
 #endif
@@ -43,13 +43,13 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action,
 
 void window_init() {
   if (!glfwInit()) {
-    window_fail_with_error("An error occurred while initializing GLFW.");
+    fail_with_error("An error occurred while initializing GLFW.");
   }
 
   glfwSetErrorCallback(error_callback);
 
   if (!glfwVulkanSupported()) {
-    window_fail_with_error("Vulkan is not supported on your platform.");
+    fail_with_error("Vulkan is not supported on your platform.");
   }
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);

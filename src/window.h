@@ -20,8 +20,6 @@ void window_update();
 
 void window_render();
 
-void window_fail_with_error(const char *error);
-
 // Return an array of required extensions.
 const char **window_get_extensions(uint32_t *extensionCount);
 

@@ -89,7 +89,7 @@ float window_get_time() {
 int window_get_thrust() { return thrust; }
 
 // Calls java code that displays an error dialog and then exits.
-void window_fail_with_error(const char *error) {
+void fail_with_error(const char *error) {
   JavaVM *vm = flap_app->activity->vm;
   JNIEnv *env = NULL;
 

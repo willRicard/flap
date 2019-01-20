@@ -6,8 +6,8 @@
 #include <vulkan/vulkan.h>
 
 #include "assets.h"
+#include "error.h"
 #include "renderer.h"
-#include "window.h"
 
 static VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
 
@@ -40,7 +40,7 @@ void pipeline_cache_init() {
 
   if (vkCreatePipelineCache(renderer_get_device(), &cache_info, NULL,
                             &pipeline_cache) != VK_SUCCESS) {
-    window_fail_with_error("Error creating pipeline cache.");
+    fail_with_error("Error creating pipeline cache.");
   }
   free(initial_data);
 }
@@ -188,8 +188,7 @@ Pipeline pipeline_create(PipelineCreateInfo *info) {
 
   if (vkCreatePipelineLayout(device, &layout_info, NULL,
                              &pipeline.pipeline_layout) != VK_SUCCESS) {
-    window_fail_with_error(
-        "An error occured while creating the pipeline layout.");
+    fail_with_error("An error occured while creating the pipeline layout.");
   }
 
   VkGraphicsPipelineCreateInfo pipeline_info = {0};
@@ -217,8 +216,7 @@ Pipeline pipeline_create(PipelineCreateInfo *info) {
 
   if (vkCreateGraphicsPipelines(device, pipeline_cache, 1, &pipeline_info, NULL,
                                 &pipeline.pipeline) != VK_SUCCESS) {
-    window_fail_with_error(
-        "An error occured while creating the graphics pipeline.");
+    fail_with_error("An error occured while creating the graphics pipeline.");
   }
 
   return pipeline;
