@@ -24,8 +24,6 @@
 #define FLAP_BIRD_WIDTH 0.08f
 #define FLAP_BIRD_HEIGHT 0.14f
 
-extern const float FLAP_BIRD_COLOR[];
-
 // Pipes
 #define FLAP_NUM_PIPES 4
 #define FLAP_PIPE_WIDTH 0.12f

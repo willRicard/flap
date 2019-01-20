@@ -147,7 +147,7 @@ void device_buffer_write(Buffer buffer, VkDeviceSize size, const void *data) {
 
   vkMapMemory(renderer_get_device(), tmp_mem, 0, size, 0, &tmp_data);
 
-  memcpy(tmp_data, data, size);
+  memcpy(tmp_data, data, (size_t)size);
 
   copy_vk_buffer(tmp_buf, buffer.buffer, size);
 

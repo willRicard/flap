@@ -2,7 +2,9 @@
 #define FLAP_PIPELINE_H_
 #include <vulkan/vulkan.h>
 
-// A versatile Pipeline object with convenient defaults
+/**
+ * A versatile Pipeline object with convenient defaults.
+ */
 typedef struct Pipeline {
   uint32_t num_shader_stages;
   VkPipelineShaderStageCreateInfo shader_stages[3];
@@ -14,8 +16,6 @@ typedef struct Pipeline {
 
   uint32_t num_vertex_attributes;
   uint32_t num_instance_attributes;
-  uint32_t vertex_attribute_stride;
-  uint32_t instance_attribute_stride;
   VkVertexInputAttributeDescription vertex_attributes[3];
   VkVertexInputAttributeDescription instance_attributes[2];
 
@@ -30,47 +30,63 @@ typedef struct Pipeline {
   VkPipeline pipeline;
 } Pipeline;
 
-// Load the pipeline cache from `pipeline_cache.bin`
+/**
+ * Load the pipeline cache from `pipeline_cache.bin`.
+ */
 void pipeline_cache_init();
 
-// Write the pipeline cache to `pipeline_cache.bin`
-// then destroy it
+/**
+ * Write the pipeline cache to `pipeline_cache.bin` then destroy it.
+ */
 void pipeline_cache_quit();
 
-// Compile a shader from SPIR-V source.
+/**
+ * Compile a shader from SPIR-V source.
+ */
 VkShaderModule shader_create(const char *file_name);
 
-// Destroy a compiled shader.
+/**
+ * Destroy a compiled shader.
+ */
 void shader_destroy(VkShaderModule module);
 
-// Add a shader stage to the pipeline.
+/**
+ * Add a shader stage to the pipeline.
+ */
 void pipeline_add_shader(Pipeline *pipeline, VkShaderModule shader_module,
                          VkShaderStageFlags shader_stage);
 
-// Add vertex or instance attributes
+/**
+ * Add vertex or instance attributes
+ */
 void pipeline_add_attributes(Pipeline *pipeline,
                              uint32_t num_attribute_bindings,
                              VkVertexInputBindingDescription *bindings,
                              uint32_t num_attributes,
                              VkVertexInputAttributeDescription *attributes);
 
-// Add a uniform buffer object to a given shader stage.
-void pipeline_add_uniform_buffer(Pipeline *pipeline,
-                                 VkShaderStageFlags shader_stage);
-
-// Add a push constant range to a given shader stage.
+/**
+ * Add a push constant range to a given shader stage.
+ */
 void pipeline_add_push_constant(Pipeline *pipeline,
                                 VkShaderStageFlags shader_stage,
-                                VkDeviceSize offset, VkDeviceSize size);
+                                uint32_t offset, uint32_t size);
 
-// Add a descriptor set layout.
+/**
+ * Add a descriptor set layout.
+ */
 void pipeline_add_set_layout(Pipeline *pipeline,
                              VkDescriptorSetLayout set_layout);
 
-// Create the pipeline and pipeline layout.
+/**
+ * Create the pipeline and pipeline layout.
+ */
 void pipeline_create(Pipeline *pipeline);
 
-// Destroy the pipeline and pipeline layout (keep shader modules).
+/**
+ * Destroy the pipeline and pipeline layout
+ * You must still destroy shader modules.
+ */
 void pipeline_destroy(Pipeline pipeline);
 
 #endif // FLAP_PIPELINE_H_

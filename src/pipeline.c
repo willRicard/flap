@@ -126,7 +126,7 @@ void pipeline_add_attributes(Pipeline *pipeline, uint32_t num_bindings,
 
 void pipeline_add_push_constant(Pipeline *pipeline,
                                 VkShaderStageFlags shader_stage,
-                                VkDeviceSize offset, VkDeviceSize size) {
+                                uint32_t offset, uint32_t size) {
   VkPushConstantRange *push_constant_range =
       &pipeline->push_constants[pipeline->num_push_constants++];
   push_constant_range->stageFlags = shader_stage;
@@ -141,16 +141,6 @@ void pipeline_add_set_layout(Pipeline *pipeline,
 
 void pipeline_create(Pipeline *pipeline) {
   VkDevice device = renderer_get_device();
-
-  VkVertexInputBindingDescription binding_description = {0};
-  binding_description.binding = 0;
-  binding_description.stride = pipeline->vertex_attribute_stride;
-  binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-  VkVertexInputBindingDescription instance_description = {0};
-  instance_description.binding = 0;
-  instance_description.stride = pipeline->instance_attribute_stride;
-  instance_description.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
   VkPipelineVertexInputStateCreateInfo vertexInput = {0};
   vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
