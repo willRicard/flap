@@ -6,18 +6,37 @@
 #include "pipeline.h"
 
 /**
- * A Vulkan renderer holds all global Vulkan objects.
+ * Global interface to the VkDevice.
  */
 
+/**
+ * Setup the VkDevice and window swapchain.
+ */
 void renderer_init();
 
+/**
+ * Clear all Vulkan resources.
+ */
 void renderer_quit();
 
+/**
+ * Execute command buffers and present the window.
+ */
 void renderer_render();
 
+/**
+ * Dynamic swapchain recreation.
+ */
 void renderer_create_swapchain();
+
+/**
+ * Clean swapchain resources.
+ */
 void renderer_cleanup_swapchain();
 
+/**
+ * Return the global handle to the VkDevice.
+ */
 VkDevice renderer_get_device();
 
 VkPhysicalDeviceProperties renderer_get_physical_device_properties();
@@ -25,13 +44,17 @@ VkPhysicalDeviceProperties renderer_get_physical_device_properties();
 VkPhysicalDeviceMemoryProperties
 renderer_get_physical_device_memory_properties();
 
+/**
+ * Get multiple buffering image count.
+ */
 uint32_t renderer_get_image_count();
 
+/**
+ * Get the render surface extent.
+ */
 const VkExtent2D renderer_get_extent();
 
 VkRenderPass renderer_get_render_pass();
-
-void renderer_set_pipeline(Pipeline *pipeline);
 
 VkCommandBuffer *renderer_begin_command_buffer();
 

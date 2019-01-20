@@ -5,9 +5,14 @@
 /**
  * A versatile Pipeline object with convenient defaults.
  */
-typedef struct Pipeline {
+typedef struct {
+  VkPipelineLayout pipeline_layout;
+  VkPipeline pipeline;
+} Pipeline;
+
+typedef struct PipelineCreateInfo {
   uint32_t num_shader_stages;
-  VkPipelineShaderStageCreateInfo shader_stages[3];
+  VkPipelineShaderStageCreateInfo *shader_stages;
 
   uint32_t num_bindings;
   uint32_t num_attributes;
@@ -20,15 +25,11 @@ typedef struct Pipeline {
   VkVertexInputAttributeDescription instance_attributes[2];
 
   uint32_t num_set_layouts;
-  VkDescriptorSetLayout set_layouts[1];
+  VkDescriptorSetLayout *set_layouts;
 
-  uint32_t num_push_constants;
-  VkPushConstantRange push_constants[1];
-
-  VkPipelineLayout pipeline_layout;
-
-  VkPipeline pipeline;
-} Pipeline;
+  uint32_t num_push_constant_ranges;
+  VkPushConstantRange *push_constant_ranges;
+} PipelineCreateInfo;
 
 /**
  * Load the pipeline cache from `pipeline_cache.bin`.
@@ -41,51 +42,12 @@ void pipeline_cache_init();
 void pipeline_cache_quit();
 
 /**
- * Compile a shader from SPIR-V source.
- */
-VkShaderModule shader_create(const char *file_name);
-
-/**
- * Destroy a compiled shader.
- */
-void shader_destroy(VkShaderModule module);
-
-/**
- * Add a shader stage to the pipeline.
- */
-void pipeline_add_shader(Pipeline *pipeline, VkShaderModule shader_module,
-                         VkShaderStageFlags shader_stage);
-
-/**
- * Add vertex or instance attributes
- */
-void pipeline_add_attributes(Pipeline *pipeline,
-                             uint32_t num_attribute_bindings,
-                             VkVertexInputBindingDescription *bindings,
-                             uint32_t num_attributes,
-                             VkVertexInputAttributeDescription *attributes);
-
-/**
- * Add a push constant range to a given shader stage.
- */
-void pipeline_add_push_constant(Pipeline *pipeline,
-                                VkShaderStageFlags shader_stage,
-                                uint32_t offset, uint32_t size);
-
-/**
- * Add a descriptor set layout.
- */
-void pipeline_add_set_layout(Pipeline *pipeline,
-                             VkDescriptorSetLayout set_layout);
-
-/**
  * Create the pipeline and pipeline layout.
  */
-void pipeline_create(Pipeline *pipeline);
+Pipeline pipeline_create(PipelineCreateInfo *pipeline_info);
 
 /**
- * Destroy the pipeline and pipeline layout
- * You must still destroy shader modules.
+ * Destroy the pipeline and pipeline layout.
  */
 void pipeline_destroy(Pipeline pipeline);
 

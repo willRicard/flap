@@ -200,26 +200,26 @@ void renderer_init() {
   // 1. Mailbox
   // 2. Immediate
   // 3. FIFO
-  uint32_t presentModeCount = 0;
+  uint32_t present_mode_count = 0;
   vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface,
-                                            &presentModeCount, NULL);
+                                            &present_mode_count, NULL);
 
-  VkPresentModeKHR *presentModes =
-      (VkPresentModeKHR *)malloc(presentModeCount * sizeof(VkPresentModeKHR));
+  VkPresentModeKHR *present_modes =
+      (VkPresentModeKHR *)malloc(present_mode_count * sizeof(VkPresentModeKHR));
 
   vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface,
-                                            &presentModeCount, presentModes);
+                                            &present_mode_count, present_modes);
 
-  for (uint32_t i = 0; i < presentModeCount; i++) {
-    if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+  for (uint32_t i = 0; i < present_mode_count; i++) {
+    if (present_modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
       present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
       break;
-    } else if (presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+    } else if (present_modes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR) {
       present_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;
     }
   }
 
-  free(presentModes);
+  free(present_modes);
 
   VkSurfaceCapabilitiesKHR capabilities;
   vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface,
@@ -289,13 +289,13 @@ void renderer_init() {
   renderer_create_swapchain();
 
   // Create semaphores for rendering synchronization.
-  VkSemaphoreCreateInfo semaphoreCreateInfo = {0};
-  semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+  VkSemaphoreCreateInfo semaphore_info = {0};
+  semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-  VK_CHECK(vkCreateSemaphore(device, &semaphoreCreateInfo, NULL,
+  VK_CHECK(vkCreateSemaphore(device, &semaphore_info, NULL,
                              &image_available_semaphore),
            "An error occured while creating the 'image available' semaphore.")
-  VK_CHECK(vkCreateSemaphore(device, &semaphoreCreateInfo, NULL,
+  VK_CHECK(vkCreateSemaphore(device, &semaphore_info, NULL,
                              &render_finished_semaphore),
            "An error occured while creating the 'render finished' semaphore.")
 }
@@ -336,8 +336,6 @@ void renderer_render() {
     renderer_cleanup_swapchain();
     renderer_create_swapchain();
 
-    // renderer_record_command_buffers();
-
     return;
   }
 
@@ -370,8 +368,6 @@ void renderer_render() {
   if (result == VK_ERROR_OUT_OF_DATE_KHR) {
     renderer_cleanup_swapchain();
     renderer_create_swapchain();
-
-    // renderer_record_command_buffers();
   }
 
   vkQueueWaitIdle(present_queue);
@@ -526,7 +522,8 @@ const VkExtent2D renderer_get_extent() { return image_extent; }
 VkRenderPass renderer_get_render_pass() { return render_pass; }
 
 VkCommandBuffer *renderer_begin_command_buffer() {
-  VkCommandBuffer *command_buffer = (VkCommandBuffer*) malloc(sizeof(VkCommandBuffer));
+  VkCommandBuffer *command_buffer =
+      (VkCommandBuffer *)malloc(sizeof(VkCommandBuffer));
 
   VkCommandBufferAllocateInfo command_buffer_info = {0};
   command_buffer_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -535,10 +532,10 @@ VkCommandBuffer *renderer_begin_command_buffer() {
   command_buffer_info.commandBufferCount = 1;
 
   VK_CHECK(
-	  vkAllocateCommandBuffers(device, &command_buffer_info, command_buffer),
-	  "An error occured while creating the command buffers.")
+      vkAllocateCommandBuffers(device, &command_buffer_info, command_buffer),
+      "An error occured while creating the command buffers.")
 
-  VkCommandBufferBeginInfo begin_info = { 0 };
+  VkCommandBufferBeginInfo begin_info = {0};
   begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
@@ -555,7 +552,8 @@ void renderer_end_command_buffer(VkCommandBuffer *command_buffer) {
   submit_info.commandBufferCount = 1;
   submit_info.pCommandBuffers = command_buffer;
 
-  VK_CHECK(vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE), "Error submitting (one-time) command buffers.")
+  VK_CHECK(vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE),
+           "Error submitting (one-time) command buffers.")
   vkQueueWaitIdle(graphics_queue);
 
   vkFreeCommandBuffers(device, command_pool, 1, command_buffer);
