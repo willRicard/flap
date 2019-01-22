@@ -1,7 +1,6 @@
 #include "assets.h"
 #include "window_android.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 char *assets_read_file(const char *file_path, size_t *data_size) {

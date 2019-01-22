@@ -1,6 +1,8 @@
 #ifndef FLAP_RECT_H_
 #define FLAP_RECT_H_
-#include <inttypes.h>
+#include <vulkan/vulkan.h>
+
+#include "device.h"
 
 /**
  * A coloured rectangle
@@ -13,19 +15,29 @@ typedef struct Rect {
 } Rect;
 
 /**
- * Create the Rect GPU pipeline and record command buffers.
+ * Load shaders
  */
-void rect_init();
+void rect_init(Device *device);
 
 /**
- * Free
+ * Free shaders
  */
-void rect_quit();
+void rect_quit(Device *device);
+
+/**
+ * Build pipeline create info.
+ */
+void rect_get_pipeline_create_info(VkGraphicsPipelineCreateInfo *pipeline_info);
+
+/**
+ * Bake rendering commands.
+ */
+void rect_record_command_buffer(VkCommandBuffer cmd_buf);
 
 /**
  * Send vertex data to the GPU.
  */
-void rect_draw();
+void rect_update();
 
 /**
  * Make a new rect.

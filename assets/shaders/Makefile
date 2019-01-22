@@ -1,4 +1,8 @@
-all: rect.vert.spv rect.frag.spv rect.geom.spv rect_uni.vert.spv rect_inst.vert.spv
+SHADERS := rect.vert.spv \
+	rect.frag.spv \
+	rect.geom.spv
+
+all: $(SHADERS)
 
 %.vert.spv: %.vert
 	glslangValidator -V $*.vert -o $*.vert.spv

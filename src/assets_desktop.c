@@ -1,5 +1,6 @@
-#include <stdlib.h>
+#include "assets.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 char *assets_read_file(const char *file_path, size_t *data_size) {

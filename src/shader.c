@@ -1,3 +1,5 @@
+#include "shader.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,9 +7,10 @@
 
 #include "assets.h"
 #include "error.h"
-#include "renderer.h"
+#include "window.h"
 
-VkShaderModule shader_create(const char *source_file) {
+void shader_create(Device *dev, const char *source_file,
+                   VkShaderStageFlags stage, Shader *shader) {
   VkShaderModuleCreateInfo module_info = {0};
   module_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
   module_info.pNext = NULL;
@@ -17,21 +20,26 @@ VkShaderModule shader_create(const char *source_file) {
   shader_code =
       (uint32_t *)assets_read_file(source_file, &module_info.codeSize);
   if (shader_code == NULL) {
-    fail_with_error("Failed reading shader code.");
+    window_fail_with_error("Failed reading shader code.");
   }
   module_info.pCode = (const uint32_t *)shader_code;
 
-  VkShaderModule module = VK_NULL_HANDLE;
-  if (vkCreateShaderModule(renderer_get_device(), &module_info, NULL,
-                           &module) != VK_SUCCESS) {
-    fail_with_error("Error while creating the vertex shader module.");
+  if (vkCreateShaderModule(dev->device, &module_info, NULL, &shader->module) !=
+      VK_SUCCESS) {
+    window_fail_with_error("Error while creating the vertex shader module.");
   }
 
   free(shader_code);
 
-  return module;
+  shader->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  shader->pNext = NULL;
+  shader->flags = 0;
+  shader->stage = stage;
+  shader->pName = "main";
+  shader->module = shader->module;
+  shader->pSpecializationInfo = NULL;
 }
 
-void shader_destroy(VkShaderModule module) {
-  vkDestroyShaderModule(renderer_get_device(), module, NULL);
+void shader_destroy(Device *dev, Shader *shader) {
+  vkDestroyShaderModule(dev->device, shader->module, NULL);
 }

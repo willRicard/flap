@@ -4,139 +4,115 @@
 
 #include "flap.h"
 
+#include "device.h"
+#include "error.h"
+#include "game.h"
+#include "instance.h"
+#include "pipeline.h"
 #include "rect.h"
-#include "renderer.h"
+#include "swapchain.h"
 #include "window.h"
 
-typedef enum { STATE_PLAYING, STATE_FALLING, STATE_GAMEOVER } GameState;
+// Clear blue sky
+const VkClearValue FLAP_CLEAR_COLOR = {{{0.53f, 0.81f, 0.92f, 1.f}}};
 
-static GameState game_state = STATE_PLAYING;
+static VkInstance instance;
+static Device device = {0};
+static Swapchain swapchain = {0};
 
-static Rect *bird;
+static VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
+static VkGraphicsPipelineCreateInfo pipeline_infos[2] = {{0}};
+static VkPipeline pipelines[2] = {0};
 
-static Rect *pipes[FLAP_NUM_PIPES * 2];
-static float pipe_gap = FLAP_PIPE_INITIAL_GAP;
+static VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
 
-static float speed_x = 0.0f;
-static float speed_y = 0.0f;
+static void create_pipelines() {
+  rect_get_pipeline_create_info(&pipeline_infos[0]);
 
-static void init() {
-  game_state = STATE_PLAYING;
-
-  bird->x = FLAP_BIRD_X;
-  bird->y = FLAP_BIRD_Y;
-
-  for (int i = 0; i < FLAP_NUM_PIPES * 2; i += 2) {
-    float x = i * FLAP_PIPE_STEP;
-    float h = FLAP_PIPE_MIN_HEIGHT +
-              (float)rand() / (float)RAND_MAX *
-                  (FLAP_PIPE_MAX_HEIGHT - FLAP_PIPE_MIN_HEIGHT);
-
-    // Top pipe
-    pipes[i]->x = x;
-    pipes[i]->y = -1.0f;
-    pipes[i]->w = FLAP_PIPE_WIDTH;
-    pipes[i]->h = h;
-
-    // Bottom pipe
-    pipes[i + 1]->x = x;
-    pipes[i + 1]->y = -1.0f + h + pipe_gap;
-    pipes[i + 1]->w = FLAP_PIPE_WIDTH;
-    pipes[i + 1]->h = 2.0f - h;
-  }
-
-  speed_x = 0.0f;
-  speed_y = 0.0f;
+  vkCreateGraphicsPipelines(device.device, pipeline_cache, 1, pipeline_infos,
+                            NULL, pipelines);
 }
 
-int main(int argc, char **argv) {
+void record_command_buffers() {
+  VkCommandBufferBeginInfo begin_info = {0};
+  begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+  for (uint32_t i = 0; i < swapchain.image_count; i++) {
+    VkCommandBuffer cmd_buf = swapchain.command_buffers[i];
+
+    vkBeginCommandBuffer(cmd_buf, &begin_info);
+
+    VkRenderPassBeginInfo render_pass_info = {0};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_info.renderPass = swapchain.render_pass;
+    render_pass_info.framebuffer = swapchain.framebuffers[i];
+    render_pass_info.renderArea.extent = swapchain.info.imageExtent;
+    render_pass_info.clearValueCount = 1;
+    render_pass_info.pClearValues = &FLAP_CLEAR_COLOR;
+    vkCmdBeginRenderPass(cmd_buf, &render_pass_info,
+                         VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[0]);
+
+    rect_record_command_buffer(cmd_buf);
+
+    vkCmdEndRenderPass(cmd_buf);
+
+    vkEndCommandBuffer(cmd_buf);
+  }
+}
+
+int main() {
   srand((unsigned int)time(NULL));
 
   window_init();
-  renderer_init();
-  rect_init();
 
-  bird = rect_new();
-  bird->w = FLAP_BIRD_WIDTH;
-  bird->h = FLAP_BIRD_HEIGHT;
+  instance = instance_create();
 
-  for (int i = 0; i < FLAP_NUM_PIPES * 2; i += 2) {
-    pipes[i] = rect_new();
-    pipes[i + 1] = rect_new();
+  VkSurfaceKHR surface = window_create_surface(instance);
+
+  device_create(instance, surface, &device);
+
+  swapchain_create(&device, surface, &swapchain);
+
+  for (uint32_t i = 0; i < 2; i++) {
+    pipeline_make_default_create_info(&swapchain, &pipeline_infos[i]);
   }
 
-  init();
+  pipeline_cache = pipeline_cache_create(&device);
 
-  float start_time = window_get_time();
-  float last_thrust = start_time;
+  rect_init(&device);
 
-  int running = 1;
+  create_pipelines();
+
+  record_command_buffers();
+
+  game_init();
+
   while (!window_should_close()) {
-    float now = window_get_time();
-    float dt = now - start_time;
-    start_time = now;
-
+    game_update();
     window_update();
-
-    if (game_state == STATE_PLAYING) {
-      pipe_gap = FLAP_PIPE_INITIAL_GAP - (now / 1000.f) * FLAP_PIPE_INITIAL_GAP;
-
-      speed_y += FLAP_GRAVITY * dt;
-
-      if (window_get_thrust() && now - last_thrust > 0.1f) {
-        speed_y += FLAP_THRUST;
-        last_thrust = now;
-      }
-
-      for (int i = 0; i < FLAP_NUM_PIPES; i += 2) {
-        pipes[i]->x += FLAP_SCROLL_SPEED * dt;
-        pipes[i + 1]->x += FLAP_SCROLL_SPEED * dt;
-
-        // Set pipes back to the far right
-        if (pipes[i]->x < -1.0f - FLAP_PIPE_WIDTH) {
-          float h = FLAP_PIPE_MIN_HEIGHT +
-                    (float)rand() / (float)RAND_MAX *
-                        (FLAP_PIPE_MAX_HEIGHT - FLAP_PIPE_MIN_HEIGHT);
-          pipes[i]->x += 2.0f + FLAP_PIPE_WIDTH;
-          pipes[i]->h = h;
-
-          pipes[i + 1]->x += 2.0f + FLAP_PIPE_WIDTH;
-          pipes[i + 1]->y = -1.0f + h + pipe_gap;
-          pipes[i + 1]->h = 2.0f - h;
-        }
-        // Collision detection
-        else if (rect_intersect(bird, pipes[i]) ||
-                 rect_intersect(bird, pipes[i + 1]) || bird->y < -1.0) {
-          game_state = STATE_FALLING;
-          speed_x = -FLAP_FALL_INITIAL_SPEED;
-          speed_y = FLAP_FALL_INITIAL_SPEED;
-        }
-      }
-      if (bird->y > 1.0f) {
-        game_state = STATE_GAMEOVER;
-      }
-    } else if (game_state == STATE_FALLING) {
-      speed_y += FLAP_GRAVITY * dt;
-      if (bird->y > 1.0f) {
-        game_state = STATE_GAMEOVER;
-      }
-    } else { // STATE_GAMEOVER
-      if (window_get_thrust()) {
-        init();
-      }
-    }
-
-    bird->x += speed_x * dt;
-    bird->y += speed_y * dt;
-
-    rect_draw();
-
-    renderer_render();
+    rect_update();
+    swapchain_present(&device, surface, &swapchain);
   }
 
-  rect_quit();
-  renderer_quit();
+  vkDestroyDescriptorPool(device.device, descriptor_pool, NULL);
+
+  vkDestroyPipeline(device.device, pipelines[0], NULL);
+  vkDestroyPipeline(device.device, pipelines[1], NULL);
+
+  rect_quit(&device);
+
+  pipeline_cache_destroy(&device, pipeline_cache);
+
+  swapchain_destroy(&device, &swapchain);
+
+  device_destroy(&device);
+
   window_quit();
+  vkDestroySurfaceKHR(instance, surface, NULL);
+  vkDestroyInstance(instance, NULL);
 
   return 0;
 }

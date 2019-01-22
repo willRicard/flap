@@ -1,147 +1,136 @@
 #include "rect.h"
+
 #include <vulkan/vulkan.h>
 
 #include "buffer.h"
+#include "device.h"
+#include "error.h"
 #include "flap.h"
-#include "pipeline.h"
-#include "renderer.h"
 #include "shader.h"
+#include "swapchain.h"
 
 const float FLAP_BIRD_COLOR[] = {1.f, 1.f, 0.f};
 const float FLAP_PIPE_COLOR[] = {0.035f, 0.42f, 0.035f};
 
-static unsigned int count = 0;
+static unsigned int rect_count = 0;
 
-static Rect vertices[1 + FLAP_NUM_PIPES * 2];
+static Rect rect_vertices[1 + FLAP_NUM_PIPES * 2] = {{0}};
 
-static const VkDeviceSize vertices_size =
-    (1 + FLAP_NUM_PIPES * 2) * sizeof(Rect);
+static Shader rect_shaders[3] = {{0}};
 
-static VkShaderModule vertex_shader = VK_NULL_HANDLE;
-static VkShaderModule geometry_shader = VK_NULL_HANDLE;
-static VkShaderModule fragment_shader = VK_NULL_HANDLE;
+static Buffer rect_vertex_buffer = {0};
 
-static Pipeline pipeline = {0};
+static VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
 
-static Buffer vertex_buffer = {0};
+void rect_init(Device *dev) {
+  // Load shaders
+  shader_create(dev, "shaders/rect.vert.spv", VK_SHADER_STAGE_VERTEX_BIT,
+                &rect_shaders[0]);
+  shader_create(dev, "shaders/rect.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT,
+                &rect_shaders[1]);
+  shader_create(dev, "shaders/rect.geom.spv", VK_SHADER_STAGE_GEOMETRY_BIT,
+                &rect_shaders[2]);
 
-void rect_init() {
-  vertex_shader = shader_create("shaders/rect.vert.spv");
-  geometry_shader = shader_create("shaders/rect.geom.spv");
-  fragment_shader = shader_create("shaders/rect.frag.spv");
+  // Create vertex buffer
+  buffer_create(dev, sizeof(rect_vertices), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                &rect_vertex_buffer);
 
-  VkPipelineShaderStageCreateInfo vertex_stage_info = {0};
-  vertex_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  vertex_stage_info.pNext = NULL;
-  vertex_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-  vertex_stage_info.pName = "main";
-  vertex_stage_info.module = vertex_shader;
-
-  VkPipelineShaderStageCreateInfo fragment_stage_info = {0};
-  fragment_stage_info.sType =
-      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  fragment_stage_info.pNext = NULL;
-  fragment_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-  fragment_stage_info.pName = "main";
-  fragment_stage_info.module = fragment_shader;
-
-  VkPipelineShaderStageCreateInfo geometry_stage_info = {0};
-  geometry_stage_info.sType =
-      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  geometry_stage_info.pNext = NULL;
-  geometry_stage_info.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-  geometry_stage_info.pName = "main";
-  geometry_stage_info.module = geometry_shader;
-
-  VkVertexInputBindingDescription vertex_binding = {0};
-  vertex_binding.binding = 0;
-  vertex_binding.stride = 4 * sizeof(float);
-  vertex_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-  VkVertexInputAttributeDescription vertex_pos_attr = {0};
-  vertex_pos_attr.location = 0;
-  vertex_pos_attr.binding = 0;
-  vertex_pos_attr.format = VK_FORMAT_R32G32_SFLOAT;
-  vertex_pos_attr.offset = 0;
-
-  VkVertexInputAttributeDescription vertex_size_attr = {0};
-  vertex_size_attr.location = 1;
-  vertex_size_attr.binding = 0;
-  vertex_size_attr.format = VK_FORMAT_R32G32_SFLOAT;
-  vertex_size_attr.offset = 2 * sizeof(float);
-
+  // Add push constant ranges
   VkPushConstantRange push_constant_range = {0};
   push_constant_range.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
   push_constant_range.offset = 0;
   push_constant_range.size = 3 * sizeof(float);
 
-  VkPipelineShaderStageCreateInfo shader_stages[] = {
-      vertex_stage_info, fragment_stage_info, geometry_stage_info};
+  VkPipelineLayoutCreateInfo pipeline_layout_info = {0};
+  pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  pipeline_layout_info.pushConstantRangeCount = 1;
+  pipeline_layout_info.pPushConstantRanges = &push_constant_range;
 
-  VkVertexInputAttributeDescription attributes[] = {vertex_pos_attr,
-                                                    vertex_size_attr};
+  error_check(vkCreatePipelineLayout(dev->device, &pipeline_layout_info, NULL,
+                                     &pipeline_layout),
+              "vkCreatePipelineLayout");
+}
 
-  PipelineCreateInfo pipeline_info = {0};
-  pipeline_info.num_shader_stages = 3;
-  pipeline_info.shader_stages = shader_stages;
-  pipeline_info.num_bindings = 1;
-  pipeline_info.bindings = &vertex_binding;
-  pipeline_info.num_attributes = 2;
-  pipeline_info.attributes = attributes;
-  pipeline_info.num_push_constant_ranges = 1;
-  pipeline_info.push_constant_ranges = &push_constant_range;
+void rect_quit(Device *dev) {
+  vkDeviceWaitIdle(dev->device);
 
-  pipeline = pipeline_create(&pipeline_info);
+  vkDestroyPipelineLayout(dev->device, pipeline_layout, NULL);
 
-  buffer_create(&vertex_buffer, vertices_size,
-                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, BUFFER_TYPE_HOST_BUFFER);
+  buffer_destroy(dev, &rect_vertex_buffer);
 
-  uint32_t command_buffer_count = 0;
-  VkCommandBuffer *command_buffers =
-      renderer_begin_command_buffers(&command_buffer_count);
-
-  for (uint32_t i = 0; i < command_buffer_count; i++) {
-    vkCmdBindPipeline(command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      pipeline.pipeline);
-
-    VkDeviceSize offset = 0;
-    vkCmdBindVertexBuffers(command_buffers[i], 0, 1, &vertex_buffer.buffer,
-                           &offset);
-
-    // Draw player
-    vkCmdPushConstants(command_buffers[i], pipeline.pipeline_layout,
-                       VK_SHADER_STAGE_FRAGMENT_BIT, 0, 3 * sizeof(float),
-                       FLAP_BIRD_COLOR);
-    vkCmdDraw(command_buffers[i], 1, 1, 0, 0);
-
-    // Draw pipes
-    vkCmdPushConstants(command_buffers[i], pipeline.pipeline_layout,
-                       VK_SHADER_STAGE_FRAGMENT_BIT, 0, 3 * sizeof(float),
-                       FLAP_PIPE_COLOR);
-    vkCmdDraw(command_buffers[i], FLAP_NUM_PIPES * 2, 1, 1, 0);
+  for (uint32_t i = 0; i < 3; i++) {
+    shader_destroy(dev, &rect_shaders[i]);
   }
-
-  renderer_end_command_buffers();
 }
 
-void rect_quit() {
-  VkDevice device = renderer_get_device();
-  vkDeviceWaitIdle(device);
+void rect_get_pipeline_create_info(
+    VkGraphicsPipelineCreateInfo *pipeline_info) {
 
-  buffer_destroy(&vertex_buffer);
+  // Add shader stages
+  static VkPipelineInputAssemblyStateCreateInfo input_assembly = {0};
+  input_assembly.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+  input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+  input_assembly.primitiveRestartEnable = VK_FALSE;
+  pipeline_info->pInputAssemblyState = &input_assembly;
 
-  shader_destroy(vertex_shader);
-  shader_destroy(geometry_shader);
-  shader_destroy(fragment_shader);
+  pipeline_info->stageCount = 3;
+  pipeline_info->pStages = rect_shaders;
 
-  pipeline_destroy(pipeline);
+  // Add vertex attributes
+  static VkVertexInputBindingDescription rect_vertex_binding = {0};
+  rect_vertex_binding.binding = 0;
+  rect_vertex_binding.stride = 4 * sizeof(float);
+  rect_vertex_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+  static VkVertexInputAttributeDescription rect_vertex_attributes[2] = {{0}};
+  rect_vertex_attributes[0].location = 0;
+  rect_vertex_attributes[0].binding = 0;
+  rect_vertex_attributes[0].format = VK_FORMAT_R32G32_SFLOAT;
+  rect_vertex_attributes[0].offset = 0;
+
+  rect_vertex_attributes[1].location = 1;
+  rect_vertex_attributes[1].binding = 0;
+  rect_vertex_attributes[1].format = VK_FORMAT_R32G32_SFLOAT;
+  rect_vertex_attributes[1].offset = 2 * sizeof(float);
+
+  static VkPipelineVertexInputStateCreateInfo rect_vertex_input_info = {0};
+  rect_vertex_input_info.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+  rect_vertex_input_info.vertexBindingDescriptionCount = 1;
+  rect_vertex_input_info.pVertexBindingDescriptions = &rect_vertex_binding;
+  rect_vertex_input_info.vertexAttributeDescriptionCount = 2;
+  rect_vertex_input_info.pVertexAttributeDescriptions = rect_vertex_attributes;
+
+  pipeline_info->pVertexInputState = &rect_vertex_input_info;
+
+  pipeline_info->layout = pipeline_layout;
 }
 
-void rect_draw() { buffer_write(vertex_buffer, vertices_size, vertices); }
+void rect_record_command_buffer(VkCommandBuffer cmd_buf) {
+  VkDeviceSize offset = 0;
+  vkCmdBindVertexBuffers(cmd_buf, 0, 1, &rect_vertex_buffer.buffer, &offset);
 
-Rect *rect_new() { return &vertices[count++]; }
+  // Draw player
+  vkCmdPushConstants(cmd_buf, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                     3 * sizeof(float), FLAP_BIRD_COLOR);
+  vkCmdDraw(cmd_buf, 1, 1, 0, 0);
 
-Rect *rect_get_vertices() { return vertices; }
+  // Draw pipes
+  vkCmdPushConstants(cmd_buf, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                     3 * sizeof(float), FLAP_PIPE_COLOR);
+  vkCmdDraw(cmd_buf, FLAP_NUM_PIPES * 2, 1, 1, 0);
+}
+
+void rect_update() {
+  buffer_write(rect_vertices, sizeof(rect_vertices), &rect_vertex_buffer);
+}
+
+Rect *rect_new() { return &rect_vertices[rect_count++]; }
+
+Rect *rect_get_vertices() { return rect_vertices; }
 
 int rect_intersect(Rect *r1, Rect *r2) {
   return (r1->x < r2->x + r2->w && r2->x < r1->x + r1->w &&

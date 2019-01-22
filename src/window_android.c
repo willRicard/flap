@@ -1,4 +1,5 @@
 #include "window_android.h"
+#include "error.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -7,9 +8,7 @@
 #include <vulkan/vulkan_android.h>
 #include <android_native_app_glue.h>
 
-#include "renderer.h"
-
-int main(int argc, char **argv);
+int main();
 
 static struct android_app *flap_app;
 static int window_ready = 0;
@@ -55,11 +54,13 @@ void android_main(struct android_app *app) {
   main(0, NULL);
 }
 
-void window_init() { renderer_init(); }
+void window_init() {
+    // No need to do anything: Android provides us with a window.
+}
 
-void window_quit() { renderer_quit(); }
-
-void window_render() { renderer_render(); }
+void window_quit() {
+    // No need to do anything: Android provides us with a window.
+}
 
 void window_update() {
   int numEvents;
@@ -80,7 +81,6 @@ void window_update() {
 int window_should_close() { return should_close; }
 
 float window_get_time() {
-  // return (float)clock() / CLOCKS_PER_SEC;
   struct timespec t;
   clock_gettime(CLOCK_MONOTONIC, &t);
   return (float)(t.tv_sec * 1000000000 + (float)t.tv_nsec) / 1000000000;
@@ -88,8 +88,7 @@ float window_get_time() {
 
 int window_get_thrust() { return thrust; }
 
-// Calls java code that displays an error dialog and then exits.
-void fail_with_error(const char *error) {
+void window_fail_with_error(const char *error) {
   JavaVM *vm = flap_app->activity->vm;
   JNIEnv *env = NULL;
 
@@ -120,10 +119,12 @@ const char **window_get_extensions(uint32_t *extensionCount) {
   return extensions;
 }
 
-VkResult window_create_surface(VkInstance instance, VkSurfaceKHR *surface) {
+VkSurfaceKHR window_create_surface(VkInstance instance) {
   VkAndroidSurfaceCreateInfoKHR surface_info = {};
   surface_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
   surface_info.window = android_window_get_app()->window;
 
-  return vkCreateAndroidSurfaceKHR(instance, &surface_info, NULL, surface);
+  VkSurfaceKHR surface = VK_NULL_HANDLE;
+  error_check(vkCreateAndroidSurfaceKHR(instance, &surface_info, NULL, &surface), "vkCreateSurfaceKHR");
+  return surface;
 }

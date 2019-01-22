@@ -20,7 +20,7 @@ int window_get_thrust() {
   return (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
 }
 
-void fail_with_error(const char *error) {
+void window_fail_with_error(const char *error) {
 #ifdef _WIN32
   MessageBox(NULL, error, "Error", MB_ICONERROR | MB_OK);
 #endif
@@ -43,13 +43,13 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action,
 
 void window_init() {
   if (!glfwInit()) {
-    fail_with_error("An error occurred while initializing GLFW.");
+    window_fail_with_error("An error occurred while initializing GLFW.");
   }
 
   glfwSetErrorCallback(error_callback);
 
   if (!glfwVulkanSupported()) {
-    fail_with_error("Vulkan is not supported on your platform.");
+    window_fail_with_error("Vulkan is not supported on your platform.");
   }
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -59,17 +59,22 @@ void window_init() {
   glfwSetKeyCallback(window, key_callback);
 }
 
+VkSurfaceKHR window_create_surface(VkInstance instance) {
+  VkSurfaceKHR surface = VK_NULL_HANDLE;
+  glfwCreateWindowSurface(instance, window, NULL, &surface);
+  return surface;
+}
+
 void window_quit() {
   glfwDestroyWindow(window);
   glfwTerminate();
 }
 
-void window_update() { glfwPollEvents(); }
+void window_update() {
+  // Sleep(64);
+  glfwPollEvents();
+}
 
 const char **window_get_extensions(uint32_t *extensionCount) {
   return glfwGetRequiredInstanceExtensions(extensionCount);
-}
-
-VkResult window_create_surface(VkInstance instance, VkSurfaceKHR *surface) {
-  return glfwCreateWindowSurface(instance, window, NULL, surface);
 }

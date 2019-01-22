@@ -26,6 +26,4 @@
 #define FLAP_PIPE_INITIAL_GAP 0.64f
 #define FLAP_PIPE_STEP 0.5f
 
-extern const float FLAP_PIPE_COLOR[];
-
 #endif // FLAP_FLAP_H
