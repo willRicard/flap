@@ -106,6 +106,8 @@ int main() {
     }
   }
 
+  vkDeviceWaitIdle(device.device);
+
   vkDestroyDescriptorPool(device.device, descriptor_pool, NULL);
 
   vkDestroyPipeline(device.device, pipelines[0], NULL);

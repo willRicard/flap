@@ -21,8 +21,10 @@ typedef struct {
   VkCommandBuffer command_buffers[4]; /** Command buffers run every frame */
 
   // Synchronization primitives
-  VkSemaphore image_available_semaphore;
-  VkSemaphore render_finished_semaphore;
+  uint32_t frame_id;
+  VkSemaphore image_available_semaphores[3];
+  VkSemaphore render_finished_semaphores[3];
+  VkFence fences[3];
 } Swapchain;
 
 /**

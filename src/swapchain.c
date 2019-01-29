@@ -111,12 +111,21 @@ void swapchain_create(Device *dev, VkSurfaceKHR surface, Swapchain *swapchain) {
   VkSemaphoreCreateInfo semaphore_info = {0};
   semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-  error_check(vkCreateSemaphore(dev->device, &semaphore_info, NULL,
-                                &swapchain->image_available_semaphore),
-              "vkCreateSemaphore");
-  error_check(vkCreateSemaphore(dev->device, &semaphore_info, NULL,
-                                &swapchain->render_finished_semaphore),
-              "vkCreateSemaphore");
+  VkFenceCreateInfo fence_info = {0};
+  fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+  for (uint32_t i = 0; i < 3; i++) {
+    error_check(vkCreateSemaphore(dev->device, &semaphore_info, NULL,
+                                  &swapchain->image_available_semaphores[i]),
+                "vkCreateSemaphore");
+    error_check(vkCreateSemaphore(dev->device, &semaphore_info, NULL,
+                                  &swapchain->render_finished_semaphores[i]),
+                "vkCreateSemaphore");
+    error_check(
+        vkCreateFence(dev->device, &fence_info, NULL, &swapchain->fences[i]),
+        "vkCreateFence");
+  }
 }
 
 void swapchain_cleanup(Device *dev, Swapchain *swapchain) {
@@ -138,8 +147,13 @@ void swapchain_destroy(Device *dev, Swapchain *swapchain) {
 
   vkDestroySwapchainKHR(dev->device, swapchain->swapchain, NULL);
 
-  vkDestroySemaphore(dev->device, swapchain->render_finished_semaphore, NULL);
-  vkDestroySemaphore(dev->device, swapchain->image_available_semaphore, NULL);
+  for (uint32_t i = 0; i < 3; i++) {
+    vkDestroySemaphore(dev->device, swapchain->render_finished_semaphores[i],
+                       NULL);
+    vkDestroySemaphore(dev->device, swapchain->image_available_semaphores[i],
+                       NULL);
+    vkDestroyFence(dev->device, swapchain->fences[i], NULL);
+  }
 }
 
 void swapchain_resize(Device *dev, VkSurfaceKHR surface, Swapchain *swapchain) {
@@ -257,10 +271,17 @@ void swapchain_resize(Device *dev, VkSurfaceKHR surface, Swapchain *swapchain) {
 }
 
 int swapchain_present(Device *dev, VkSurfaceKHR surface, Swapchain *swapchain) {
+  swapchain->frame_id = (swapchain->frame_id + 1) % 3;
+
+  vkWaitForFences(dev->device, 1, &swapchain->fences[swapchain->frame_id],
+                  VK_TRUE, UINT64_MAX);
+  vkResetFences(dev->device, 1, &swapchain->fences[swapchain->frame_id]);
+
   uint32_t image_index;
   VkResult result = vkAcquireNextImageKHR(
       dev->device, swapchain->swapchain, UINT64_MAX,
-      swapchain->image_available_semaphore, VK_NULL_HANDLE, &image_index);
+      swapchain->image_available_semaphores[swapchain->frame_id],
+      VK_NULL_HANDLE, &image_index);
 
   if (result == VK_ERROR_OUT_OF_DATE_KHR) {
     swapchain_destroy(dev, swapchain);
@@ -275,21 +296,24 @@ int swapchain_present(Device *dev, VkSurfaceKHR surface, Swapchain *swapchain) {
   VkSubmitInfo submit_info = {0};
   submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
   submit_info.waitSemaphoreCount = 1;
-  submit_info.pWaitSemaphores = &swapchain->image_available_semaphore;
+  submit_info.pWaitSemaphores =
+      &swapchain->image_available_semaphores[swapchain->frame_id];
   submit_info.pWaitDstStageMask = &waitStage;
   submit_info.commandBufferCount = 1;
   submit_info.pCommandBuffers = &swapchain->command_buffers[image_index];
   submit_info.signalSemaphoreCount = 1;
-  submit_info.pSignalSemaphores = &swapchain->render_finished_semaphore;
+  submit_info.pSignalSemaphores =
+      &swapchain->render_finished_semaphores[swapchain->frame_id];
 
-  error_check(
-      vkQueueSubmit(dev->graphics_queue, 1, &submit_info, VK_NULL_HANDLE),
-      "vkQueueSubmit");
+  error_check(vkQueueSubmit(dev->graphics_queue, 1, &submit_info,
+                            swapchain->fences[swapchain->frame_id]),
+              "vkQueueSubmit");
 
   VkPresentInfoKHR present_info = {0};
   present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
   present_info.waitSemaphoreCount = 1;
-  present_info.pWaitSemaphores = &swapchain->render_finished_semaphore;
+  present_info.pWaitSemaphores =
+      &swapchain->render_finished_semaphores[swapchain->frame_id];
   present_info.swapchainCount = 1;
   present_info.pSwapchains = &swapchain->swapchain;
   present_info.pImageIndices = &image_index;
@@ -301,8 +325,6 @@ int swapchain_present(Device *dev, VkSurfaceKHR surface, Swapchain *swapchain) {
     swapchain_resize(dev, surface, swapchain);
     return 0;
   }
-
-  vkQueueWaitIdle(dev->present_queue);
 
   return 1;
 }
