@@ -1,5 +1,7 @@
 #include "device.h"
 
+#include <stdlib.h>
+
 #include "error.h"
 #include "window.h"
 
@@ -8,7 +10,8 @@ void device_create(VkInstance instance, VkSurfaceKHR surface, Device *dev) {
   error_check(vkEnumeratePhysicalDevices(instance, &device_count, NULL),
               "vkEnumeratePhysicalDevices");
 
-  VkPhysicalDevice devices[2];
+  VkPhysicalDevice *devices =
+      (VkPhysicalDevice *)malloc(device_count * sizeof(VkPhysicalDevice));
 
   error_check(vkEnumeratePhysicalDevices(instance, &device_count, devices),
               "vkEnumeratePhysicalDevices");
@@ -25,6 +28,9 @@ void device_create(VkInstance instance, VkSurfaceKHR surface, Device *dev) {
       dev->physical_device = devices[i];
     }
   }
+
+  free(devices);
+
   if (dev->physical_device == VK_NULL_HANDLE) {
     window_fail_with_error("No suitable device was found.");
   }
@@ -38,7 +44,9 @@ void device_create(VkInstance instance, VkSurfaceKHR surface, Device *dev) {
   vkGetPhysicalDeviceQueueFamilyProperties(dev->physical_device,
                                            &queue_family_count, NULL);
 
-  VkQueueFamilyProperties queue_family_properties[2];
+  VkQueueFamilyProperties *queue_family_properties =
+      (VkQueueFamilyProperties *)malloc(queue_family_count *
+                                        sizeof(VkQueueFamilyProperties));
 
   vkGetPhysicalDeviceQueueFamilyProperties(
       dev->physical_device, &queue_family_count, queue_family_properties);
@@ -67,6 +75,8 @@ void device_create(VkInstance instance, VkSurfaceKHR surface, Device *dev) {
     }
   }
 
+  free(queue_family_properties);
+
   float priority = 1.f;
 
   VkDeviceQueueCreateInfo queue_infos[2] = {{0}, {0}};
@@ -84,7 +94,7 @@ void device_create(VkInstance instance, VkSurfaceKHR surface, Device *dev) {
   VkPhysicalDeviceFeatures features = {0};
   vkGetPhysicalDeviceFeatures(dev->physical_device, &features);
 
-  static const char *deviceExtension = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+  static const char *device_extension = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 
   VkDeviceCreateInfo device_info = {0};
   device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -92,7 +102,7 @@ void device_create(VkInstance instance, VkSurfaceKHR surface, Device *dev) {
   device_info.queueCreateInfoCount = 1;
   device_info.pQueueCreateInfos = queue_infos;
   device_info.enabledExtensionCount = 1;
-  device_info.ppEnabledExtensionNames = &deviceExtension;
+  device_info.ppEnabledExtensionNames = &device_extension;
   device_info.pEnabledFeatures = &features;
 
   vkCreateDevice(dev->physical_device, &device_info, NULL, &dev->device);

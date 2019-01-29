@@ -1,5 +1,7 @@
 #include "swapchain.h"
 
+#include <stdlib.h>
+
 #include "error.h"
 #include "flap.h"
 
@@ -49,7 +51,9 @@ void swapchain_create(Device *dev, VkSurfaceKHR surface, Swapchain *swapchain) {
   vkGetPhysicalDeviceSurfaceFormatsKHR(dev->physical_device, surface,
                                        &format_count, NULL);
 
-  VkSurfaceFormatKHR formats[2];
+  VkSurfaceFormatKHR *formats =
+      (VkSurfaceFormatKHR *)malloc(format_count * sizeof(VkSurfaceFormatKHR));
+
   vkGetPhysicalDeviceSurfaceFormatsKHR(dev->physical_device, surface,
                                        &format_count, formats);
 
@@ -57,6 +61,8 @@ void swapchain_create(Device *dev, VkSurfaceKHR surface, Swapchain *swapchain) {
     info->imageFormat = formats[0].format;
     info->imageColorSpace = formats[0].colorSpace;
   }
+
+  free(formats);
 
   choose_resolution(&capabilities, &info->imageExtent);
 
@@ -84,11 +90,13 @@ void swapchain_create(Device *dev, VkSurfaceKHR surface, Swapchain *swapchain) {
   // 1. Mailbox
   // 2. Immediate
   // 3. FIFO
-  VkPresentModeKHR present_modes[6];
   uint32_t present_mode_count = 0;
 
   vkGetPhysicalDeviceSurfacePresentModesKHR(dev->physical_device, surface,
                                             &present_mode_count, NULL);
+
+  VkPresentModeKHR *present_modes =
+      (VkPresentModeKHR *)malloc(present_mode_count * sizeof(VkPresentModeKHR));
 
   vkGetPhysicalDeviceSurfacePresentModesKHR(dev->physical_device, surface,
                                             &present_mode_count, present_modes);
@@ -101,6 +109,8 @@ void swapchain_create(Device *dev, VkSurfaceKHR surface, Swapchain *swapchain) {
       info->presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
     }
   }
+
+  free(present_modes);
 
   info->clipped = VK_FALSE;
   info->oldSwapchain = VK_NULL_HANDLE;

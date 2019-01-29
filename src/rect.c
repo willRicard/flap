@@ -124,9 +124,7 @@ void rect_record_command_buffer(VkCommandBuffer cmd_buf) {
   vkCmdDraw(cmd_buf, FLAP_NUM_PIPES * 2, 1, 1, 0);
 }
 
-void rect_update() {
-  buffer_write(rect_vertices, sizeof(rect_vertices), &rect_vertex_buffer);
-}
+void rect_update() { buffer_write(rect_vertices, &rect_vertex_buffer); }
 
 Rect *rect_new() { return &rect_vertices[rect_count++]; }
 

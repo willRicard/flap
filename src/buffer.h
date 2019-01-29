@@ -10,6 +10,7 @@
 typedef struct Buffer {
   VkBuffer buffer;
   VkDeviceMemory memory;
+  VkDeviceSize size;
   uint8_t *data;
 } Buffer;
 
@@ -27,12 +28,11 @@ void buffer_destroy(Device *device, Buffer *buf);
 /**
  * Write data to a buffer.
  */
-void buffer_write(const void *data, VkDeviceSize size, Buffer *buf);
+void buffer_write(const void *data, Buffer *buf);
 
 /**
  * Synchronous copy from one buffer to another.
  */
-void buffer_copy(Device *device, Buffer *src_buf, Buffer *dst_buf,
-                 VkDeviceSize size);
+void buffer_copy(Device *device, Buffer *src_buf, Buffer *dst_buf);
 
 #endif // FLAP_BUFFER_H_
