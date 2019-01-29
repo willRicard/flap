@@ -1,7 +1,8 @@
 #ifndef FLAP_SWAPCHAIN_H
 #define FLAP_SWAPCHAIN_H
-#include "device.h"
 #include <vulkan/vulkan.h>
+
+#include "device.h"
 
 /**
  * Image swapchain.
@@ -46,7 +47,7 @@ void swapchain_cleanup(Device *device, Swapchain *swapchain);
 /**
  * Submit the command buffers and present to the window surface.
  */
-void swapchain_present(Device *device, VkSurfaceKHR surface,
-                       Swapchain *swapchain);
+int swapchain_present(Device *device, VkSurfaceKHR surface,
+                      Swapchain *swapchain);
 
 #endif // FLAP_SWAPCHAIN_H

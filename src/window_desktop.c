@@ -1,14 +1,13 @@
 #include "window.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "flap.h"
-
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
 #include <GLFW/glfw3.h>
+
+#include "flap.h"
 
 static GLFWwindow *window = NULL;
 
@@ -70,10 +69,7 @@ void window_quit() {
   glfwTerminate();
 }
 
-void window_update() {
-  // Sleep(64);
-  glfwPollEvents();
-}
+void window_update() { glfwPollEvents(); }
 
 const char **window_get_extensions(uint32_t *extensionCount) {
   return glfwGetRequiredInstanceExtensions(extensionCount);

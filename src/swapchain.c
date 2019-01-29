@@ -1,8 +1,5 @@
 #include "swapchain.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "error.h"
 #include "flap.h"
 
@@ -130,17 +127,16 @@ void swapchain_cleanup(Device *dev, Swapchain *swapchain) {
     vkDestroyImageView(dev->device, swapchain->image_views[i], NULL);
   }
 
-  vkDestroySwapchainKHR(dev->device, swapchain->swapchain, NULL);
-  swapchain = VK_NULL_HANDLE;
+  vkDestroyRenderPass(dev->device, swapchain->render_pass, NULL);
+
+  vkFreeCommandBuffers(dev->device, dev->command_pool, swapchain->image_count,
+                       swapchain->command_buffers);
 }
 
 void swapchain_destroy(Device *dev, Swapchain *swapchain) {
   swapchain_cleanup(dev, swapchain);
 
-  vkDestroyRenderPass(dev->device, swapchain->render_pass, NULL);
-
-  vkFreeCommandBuffers(dev->device, dev->command_pool, swapchain->image_count,
-                       swapchain->command_buffers);
+  vkDestroySwapchainKHR(dev->device, swapchain->swapchain, NULL);
 
   vkDestroySemaphore(dev->device, swapchain->render_finished_semaphore, NULL);
   vkDestroySemaphore(dev->device, swapchain->image_available_semaphore, NULL);
@@ -153,11 +149,15 @@ void swapchain_resize(Device *dev, VkSurfaceKHR surface, Swapchain *swapchain) {
 
   choose_resolution(&capabilities, &swapchain->info.imageExtent);
 
-  swapchain->info.oldSwapchain = swapchain->swapchain;
+  VkSwapchainKHR old_swapchain = swapchain->swapchain;
+
+  swapchain->info.oldSwapchain = old_swapchain;
 
   error_check(vkCreateSwapchainKHR(dev->device, &swapchain->info, NULL,
                                    &swapchain->swapchain),
               "An error occured while creating the swapchain.");
+
+  vkDestroySwapchainKHR(dev->device, old_swapchain, NULL);
 
   // Retrieve the swapchain images.
   VkImage swapchain_images[3];
@@ -256,8 +256,7 @@ void swapchain_resize(Device *dev, VkSurfaceKHR surface, Swapchain *swapchain) {
               "vkAllocateCommandBuffers");
 }
 
-void swapchain_present(Device *dev, VkSurfaceKHR surface,
-                       Swapchain *swapchain) {
+int swapchain_present(Device *dev, VkSurfaceKHR surface, Swapchain *swapchain) {
   uint32_t image_index;
   VkResult result = vkAcquireNextImageKHR(
       dev->device, swapchain->swapchain, UINT64_MAX,
@@ -267,7 +266,7 @@ void swapchain_present(Device *dev, VkSurfaceKHR surface,
     swapchain_destroy(dev, swapchain);
     swapchain_resize(dev, surface, swapchain);
 
-    return;
+    return 0;
   }
 
   VkPipelineStageFlags waitStage =
@@ -298,9 +297,12 @@ void swapchain_present(Device *dev, VkSurfaceKHR surface,
   result = vkQueuePresentKHR(dev->present_queue, &present_info);
 
   if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-    swapchain_destroy(dev, swapchain);
+    swapchain_cleanup(dev, swapchain);
     swapchain_resize(dev, surface, swapchain);
+    return 0;
   }
 
   vkQueueWaitIdle(dev->present_queue);
+
+  return 1;
 }
