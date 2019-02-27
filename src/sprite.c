@@ -126,25 +126,20 @@ void sprite_get_pipeline_create_info(
   sprite_vertex_binding.stride = 4 * sizeof(float);
   sprite_vertex_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-  static VkVertexInputAttributeDescription sprite_vertex_attributes[2] = {{0}};
-  sprite_vertex_attributes[0].location = 0;
-  sprite_vertex_attributes[0].binding = 0;
-  sprite_vertex_attributes[0].format = VK_FORMAT_R32G32_SFLOAT;
-  sprite_vertex_attributes[0].offset = 0;
-
-  sprite_vertex_attributes[1].location = 1;
-  sprite_vertex_attributes[1].binding = 0;
-  sprite_vertex_attributes[1].format = VK_FORMAT_R32G32_SFLOAT;
-  sprite_vertex_attributes[1].offset = 2 * sizeof(float);
+  static VkVertexInputAttributeDescription sprite_vertex_attribute = {0};
+  sprite_vertex_attribute.location = 0;
+  sprite_vertex_attribute.binding = 0;
+  sprite_vertex_attribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+  sprite_vertex_attribute.offset = 0;
 
   static VkPipelineVertexInputStateCreateInfo sprite_vertex_input_info = {0};
   sprite_vertex_input_info.sType =
       VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
   sprite_vertex_input_info.vertexBindingDescriptionCount = 1;
   sprite_vertex_input_info.pVertexBindingDescriptions = &sprite_vertex_binding;
-  sprite_vertex_input_info.vertexAttributeDescriptionCount = 2;
+  sprite_vertex_input_info.vertexAttributeDescriptionCount = 1;
   sprite_vertex_input_info.pVertexAttributeDescriptions =
-      sprite_vertex_attributes;
+      &sprite_vertex_attribute;
 
   pipeline_info->pVertexInputState = &sprite_vertex_input_info;
 }

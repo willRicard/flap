@@ -47,10 +47,6 @@ void window_init() {
 
   glfwSetErrorCallback(error_callback);
 
-  if (!glfwVulkanSupported()) {
-    window_fail_with_error("Vulkan is not supported on your platform.");
-  }
-
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
   window = glfwCreateWindow(FLAP_WINDOW_WIDTH, FLAP_WINDOW_HEIGHT, "Flap", NULL,
