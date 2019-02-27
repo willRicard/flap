@@ -8,13 +8,14 @@ find_package(Vulkan REQUIRED)
 add_executable(flap
   src/main.c
   src/game.c
-  src/rect.c
+  src/sprite.c
   src/instance.c
   src/device.c
   src/swapchain.c
   src/shader.c
   src/pipeline.c
   src/buffer.c
+  src/texture.c
   src/error.c
   src/assets_desktop.c
   src/window_desktop.c

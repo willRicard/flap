@@ -1,6 +1,5 @@
-SHADERS := rect.vert.spv \
-	rect.frag.spv \
-	rect.geom.spv
+SHADERS := sprite.vert.spv \
+           sprite.frag.spv
 
 all: $(SHADERS)
 

@@ -9,7 +9,7 @@
 #include "game.h"
 #include "instance.h"
 #include "pipeline.h"
-#include "rect.h"
+#include "sprite.h"
 #include "swapchain.h"
 #include "window.h"
 
@@ -25,16 +25,53 @@ static VkPipeline pipelines[2] = {0};
 
 static VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
 
+static VkDescriptorSet descriptor_sets[4] = {0};
+
 static void create_pipelines() {
   VkGraphicsPipelineCreateInfo pipeline_infos[2] = {{0}};
   for (uint32_t i = 0; i < 2; i++) {
     pipeline_make_default_create_info(&swapchain, &pipeline_infos[i]);
   }
 
-  rect_get_pipeline_create_info(&pipeline_infos[0]);
+  sprite_get_pipeline_create_info(&pipeline_infos[0]);
 
   vkCreateGraphicsPipelines(device.device, pipeline_cache, 1, pipeline_infos,
                             NULL, pipelines);
+}
+
+static void create_descriptor_sets() {
+  VkDescriptorPoolSize pool_size;
+  pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  pool_size.descriptorCount = swapchain.image_count;
+
+  VkDescriptorPoolCreateInfo pool_info = {0};
+  pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  pool_info.poolSizeCount = 1;
+  pool_info.pPoolSizes = &pool_size;
+  pool_info.maxSets = swapchain.image_count;
+
+  error_check(
+      vkCreateDescriptorPool(device.device, &pool_info, NULL, &descriptor_pool),
+      "vkCreateDescriptorPool");
+
+  VkDescriptorSetLayout layouts[3];
+  for (uint32_t i = 0; i < swapchain.image_count; ++i) {
+    layouts[i] = sprite_get_descriptor_set_layout();
+  }
+
+  VkDescriptorSetAllocateInfo alloc_info = {0};
+  alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+  alloc_info.descriptorPool = descriptor_pool;
+  alloc_info.descriptorSetCount = swapchain.image_count;
+  alloc_info.pSetLayouts = layouts;
+
+  error_check(
+      vkAllocateDescriptorSets(device.device, &alloc_info, descriptor_sets),
+      "vkAllocateDescriptorSets");
+
+  for (uint32_t i = 0; i < swapchain.image_count; ++i) {
+    sprite_create_descriptor(&device, descriptor_sets[i]);
+  }
 }
 
 static void record_command_buffers() {
@@ -59,7 +96,11 @@ static void record_command_buffers() {
 
     vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines[0]);
 
-    rect_record_command_buffer(cmd_buf);
+    vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            sprite_get_pipeline_layout(), 0, 1,
+                            &descriptor_sets[i], 0, NULL);
+
+    sprite_record_command_buffer(cmd_buf);
 
     vkCmdEndRenderPass(cmd_buf);
 
@@ -82,9 +123,11 @@ int main() {
 
   pipeline_cache = pipeline_cache_create(&device);
 
-  rect_init(&device);
+  sprite_init(&device);
 
   create_pipelines();
+
+  create_descriptor_sets();
 
   record_command_buffers();
 
@@ -95,13 +138,14 @@ int main() {
 
     window_update();
 
-    rect_update();
+    sprite_update();
 
     if (!swapchain_present(&device, surface, &swapchain)) {
       vkDestroyPipeline(device.device, pipelines[0], NULL);
       vkDestroyPipeline(device.device, pipelines[1], NULL);
 
       create_pipelines();
+      create_descriptor_sets();
       record_command_buffers();
     }
   }
@@ -113,7 +157,7 @@ int main() {
   vkDestroyPipeline(device.device, pipelines[0], NULL);
   vkDestroyPipeline(device.device, pipelines[1], NULL);
 
-  rect_quit(&device);
+  sprite_quit(&device);
 
   pipeline_cache_destroy(&device, pipeline_cache);
 
