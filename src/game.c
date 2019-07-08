@@ -9,7 +9,10 @@
 
 typedef enum { STATE_PLAYING, STATE_FALLING, STATE_GAMEOVER } GameState;
 
-static GameState game_state;
+static GameState game_state = STATE_PLAYING;
+
+static int pause = 0;
+
 static Sprite *bird;
 
 static float vx = 0.0f, vy = 0.0f;
@@ -66,6 +69,15 @@ void game_update() {
   float now = window_get_time();
   float dt = now - last_time;
   last_time = now;
+
+  if (pause) {
+    if (window_get_pause()) {
+      pause = 0;
+    }
+    return;
+  } else if (window_get_pause()) {
+    pause = 1;
+  }
 
   if (game_state == STATE_PLAYING) {
     vy += FLAP_GRAVITY * dt;

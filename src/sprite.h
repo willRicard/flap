@@ -2,7 +2,7 @@
 #define FLAP_SPRITE_H
 #include <vulkan/vulkan.h>
 
-#include "device.h"
+#include <sulfur/device.h>
 
 /**
  * A sprite vertex.
@@ -24,12 +24,12 @@ typedef struct Sprite {
 /**
  * Load shaders and resources.
  */
-void sprite_init(Device *dev);
+void sprite_init(SulfurDevice *dev);
 
 /**
  * Free shaders and resources.
  */
-void sprite_quit(Device *device);
+void sprite_quit(SulfurDevice *device);
 
 /**
  * Build pipeline create info.
@@ -57,7 +57,8 @@ void sprite_record_command_buffer(VkCommandBuffer cmd_buf);
 /**
  * Create a descriptor set for the texture.
  */
-void sprite_create_descriptor(Device *dev, VkDescriptorSet descriptor_set);
+void sprite_create_descriptor(SulfurDevice *dev,
+                              VkDescriptorSet descriptor_set);
 
 /**
  * Make a new sprite from a portion of the texture.

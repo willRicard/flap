@@ -1,12 +1,11 @@
-#include "window_android.h"
-#include "error.h"
+#include <sulfur/window_android.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
-#include <vulkan/vulkan_android.h>
 #include <android_native_app_glue.h>
+#include <vulkan/vulkan_android.h>
 
 int main();
 
@@ -14,6 +13,7 @@ static struct android_app *flap_app;
 static int window_ready = 0;
 static int should_close = 0;
 static int thrust = 0;
+static int pause = 0;
 
 struct android_app *android_window_get_app() {
   return flap_app;
@@ -55,11 +55,11 @@ void android_main(struct android_app *app) {
 }
 
 void window_init() {
-    // No need to do anything: Android provides us with a window.
+  // No need to do anything: Android provides us with a window.
 }
 
 void window_quit() {
-    // No need to do anything: Android provides us with a window.
+  // No need to do anything: Android provides us with a window.
 }
 
 void window_update() {
@@ -88,6 +88,12 @@ float window_get_time() {
 
 int window_get_thrust() { return thrust; }
 
+int window_get_pause() { return pause; }
+
+/**
+ * Display an error message through
+ * an Android dialog then exit.
+ */
 void window_fail_with_error(const char *error) {
   JavaVM *vm = flap_app->activity->vm;
   JNIEnv *env = NULL;
@@ -109,6 +115,7 @@ void window_fail_with_error(const char *error) {
 
   (*env)->CallVoidMethod(env, activity, fail_with_error, error_string);
 
+  // Let the dialog run on its own thread.
   (*vm)->DetachCurrentThread(vm);
 }
 
@@ -125,6 +132,11 @@ VkSurfaceKHR window_create_surface(VkInstance instance) {
   surface_info.window = android_window_get_app()->window;
 
   VkSurfaceKHR surface = VK_NULL_HANDLE;
-  error_check(vkCreateAndroidSurfaceKHR(instance, &surface_info, NULL, &surface), "vkCreateSurfaceKHR");
+  VkResult result =
+      vkCreateAndroidSurfaceKHR(instance, &surface_info, NULL, &surface);
+  if (result != VK_SUCCESS) {
+    window_fail_with_error(
+        "Error creating window surface: vkCreateAndroidSurfaceKHR");
+  }
   return surface;
 }

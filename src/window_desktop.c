@@ -1,4 +1,5 @@
 #include "window.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef _WIN32
@@ -10,14 +11,16 @@
 #include "flap.h"
 
 static GLFWwindow *window = NULL;
+static int thrust = 0;
+static int pause = 0;
 
 int window_should_close() { return glfwWindowShouldClose(window); }
 
 float window_get_time() { return (float)glfwGetTime(); }
 
-int window_get_thrust() {
-  return (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS);
-}
+int window_get_thrust() { return thrust; }
+
+int window_get_pause() { return pause; }
 
 void window_fail_with_error(const char *error) {
 #ifdef _WIN32
@@ -34,8 +37,11 @@ static void error_callback(int error, const char *description) {
 
 static void key_callback(GLFWwindow *window, int key, int scancode, int action,
                          int mods) {
-
-  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+  if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+    thrust = 1;
+  } else if (key == GLFW_KEY_P && action == GLFW_PRESS) {
+    pause = 1;
+  } else if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, GLFW_TRUE);
   }
 }
@@ -65,7 +71,11 @@ void window_quit() {
   glfwTerminate();
 }
 
-void window_update() { glfwPollEvents(); }
+void window_update() {
+  thrust = 0;
+  pause = 0;
+  glfwPollEvents();
+}
 
 const char **window_get_extensions(uint32_t *extensionCount) {
   return glfwGetRequiredInstanceExtensions(extensionCount);

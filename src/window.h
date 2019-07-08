@@ -24,4 +24,6 @@ float window_get_time();
 
 int window_get_thrust();
 
+int window_get_pause();
+
 #endif // FLAP_WINDOW_H
