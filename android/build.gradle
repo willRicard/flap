@@ -6,22 +6,45 @@ buildscript {
     google()
   }
   dependencies {
-    classpath 'com.android.tools.build:gradle:3.3.0'
+    classpath 'com.android.tools.build:gradle:3.4.2'
   }
 }
 
 android {
-  compileSdkVersion 28
+  compileSdkVersion 29
   defaultConfig {
-    applicationId "eu.willricard.flap"
-    minSdkVersion 26
-    targetSdkVersion 28
+    applicationId 'eu.willricard.flap'
+    minSdkVersion 24
+    targetSdkVersion 29
     versionCode 1
-    versionName "1.0"
+    versionName '1.0'
+    externalNativeBuild {
+      cmake {
+        arguments '-DFLAP_ANDROID=ON'
+      }
+    }
+    vectorDrawables.useSupportLibrary = true
+  }
+  buildTypes {
+    release {
+      minifyEnabled true
+      proguardFiles getDefaultProguardFile('proguard-android.txt')
+    }
+    debug {
+      applicationIdSuffix '.debug'
+      debuggable true
+      sourceSets {
+        debug {
+          // Vulkan validation layers
+          jniLibs.srcDir file(android.ndkDirectory.toString() + '/sources/third_party/vulkan/src/build-android/jniLibs')
+        }
+      }
+    }
   }
   externalNativeBuild {
-    ndkBuild {
-      path "Android.mk"
+    cmake {
+      version '3.10.2'
+      path '../CMakeLists.txt'
     }
   }
   sourceSets {
@@ -35,5 +58,6 @@ android {
 }
 
 repositories {
-    google()
+  jcenter()
+  google()
 }

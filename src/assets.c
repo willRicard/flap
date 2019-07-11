@@ -1,15 +1,79 @@
 #include "assets.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
-#include <sulfur/shader.h>
-#include <sulfur/texture.h>
+#define STBI_ASSERT(x)
+#define STBI_NO_STDIO
+#define STBI_ONLY_PNG
+#include "stb_image.h"
 
 #include "window.h"
 
+/**
+ * Read contents of `file_path` using standard C calls.
+ * You are responsible for freeing the allocated memory.
+ */
+char *assets_base_read_file(const char *file_path, size_t *data_size) {
+  char full_path[64] = {0};
+
+#ifdef _WIN32
+  strncat_s(full_path, 64, "assets/", 63);
+  strncat_s(full_path, 64, file_path, 63);
+#else
+  strncat(full_path, "assets/", 63);
+  strncat(full_path, file_path, 63);
+#endif
+
+  FILE *file = NULL;
+
+#ifdef _WIN32
+  fopen_s(&file, full_path, "rb");
+#else
+  file = fopen(full_path, "rbe");
+#endif
+
+  if (file == NULL) {
+    return NULL;
+  }
+
+  fseek(file, 0, SEEK_END);
+  size_t size = (size_t)ftell(file);
+
+  char *data = NULL;
+  data = (char *)malloc(size * sizeof(char));
+  if (data == NULL) {
+    return NULL;
+  }
+
+  rewind(file);
+  fread(data, size, 1, file);
+
+  fclose(file);
+
+  if (data_size != NULL) {
+    *data_size = size;
+  }
+
+  return data;
+}
+
+/**
+ * Write `data` to `file_path` using standard C calls.
+ */
+void assets_base_write_file(const char *data, size_t data_size,
+                            const char *file_path) {
+  FILE *file = fopen(file_path, "wbe");
+
+  fwrite(data, data_size, 1, file);
+
+  fclose(file);
+}
+
+/**
+ * Read SPIR-V code from `file_path`.
+ */
 VkResult assets_create_shader(SulfurDevice *dev, const char *file_path,
                               VkShaderStageFlags shader_stage,
                               SulfurShader *shader) {
@@ -27,11 +91,14 @@ VkResult assets_create_shader(SulfurDevice *dev, const char *file_path,
   return result;
 }
 
-VkResult assets_create_pipeline_cache(SulfurDevice *dev,
+/**
+ * Read pipeline cache data from `file_path`.
+ */
+VkResult assets_create_pipeline_cache(SulfurDevice *dev, const char *file_path,
                                       VkPipelineCache *pipeline_cache) {
   char *initial_data = NULL;
   size_t initial_data_size = 0;
-  initial_data = assets_read_file("pipeline_cache.bin", &initial_data_size);
+  initial_data = assets_read_file(file_path, &initial_data_size);
 
   // It is OK for `initial_data` to be NULL
   // since we would create an empty cache.
@@ -51,8 +118,12 @@ VkResult assets_create_pipeline_cache(SulfurDevice *dev,
   return result;
 }
 
+/**
+ * Write pipeline cache data to `file_path`.
+ */
 void assets_destroy_pipeline_cache(SulfurDevice *dev,
-                                   VkPipelineCache pipeline_cache) {
+                                   VkPipelineCache pipeline_cache,
+                                   const char *file_path) {
   if (pipeline_cache == VK_NULL_HANDLE) {
     return;
   }
@@ -63,11 +134,14 @@ void assets_destroy_pipeline_cache(SulfurDevice *dev,
   char *data = (char *)malloc(data_size * sizeof(char));
   vkGetPipelineCacheData(dev->device, pipeline_cache, &data_size, data);
 
-  assets_write_file(data, data_size, "pipeline_cache.bin");
+  assets_write_file(data, data_size, file_path);
 
   vkDestroyPipelineCache(dev->device, pipeline_cache, NULL);
 }
 
+/**
+ * Read image data from `file_path`.
+ */
 VkResult assets_create_texture(SulfurDevice *dev, const char *file_path,
                                VkFormat format, SulfurTexture *texture) {
   size_t data_size;

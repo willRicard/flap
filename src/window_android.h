@@ -1,7 +1,7 @@
 #ifndef SULFUR_ANDROID_WINDOW_H_
 #define SULFUR_ANDROID_WINDOW_H_
+#include "window.h"
 #include <android_native_app_glue.h>
-#include <sulfur/window.h>
 
 /*
  * Return the application structure needed to interface with the Android system.

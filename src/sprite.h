@@ -4,6 +4,23 @@
 
 #include <sulfur/device.h>
 
+#define FLAP_SPRITE_TEXTURE_BIRD_X 0
+#define FLAP_SPRITE_TEXTURE_BIRD_Y 0
+#define FLAP_SPRITE_TEXTURE_BIRD_WIDTH 32
+#define FLAP_SPRITE_TEXTURE_BIRD_HEIGHT 32
+
+#define FLAP_SPRITE_TEXTURE_PIPE_HEAD_X 64
+#define FLAP_SPRITE_TEXTURE_PIPE_HEAD_Y 0
+#define FLAP_SPRITE_TEXTURE_PIPE_HEAD_WIDTH 32
+#define FLAP_SPRITE_TEXTURE_PIPE_HEAD_HEIGHT 16
+
+#define FLAP_SPRITE_TEXTURE_PIPE_BODY_X 102
+#define FLAP_SPRITE_TEXTURE_PIPE_BODY_Y 0
+#define FLAP_SPRITE_TEXTURE_PIPE_BODY_WIDTH 20
+#define FLAP_SPRITE_TEXTURE_PIPE_BODY_HEIGHT 32
+
+#define FLAP_SPRITE_PIPE_HEAD_HEIGHT 16.F / 32.F
+
 /**
  * A sprite vertex.
  */
@@ -72,6 +89,8 @@ void sprite_set_y(Sprite *sprite, float y);
 void sprite_set_w(Sprite *sprite, float w);
 
 void sprite_set_h(Sprite *sprite, float h);
+
+void sprite_set_th(Sprite *sprite, float th);
 
 float sprite_get_x(Sprite *sprite);
 

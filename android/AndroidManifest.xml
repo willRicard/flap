@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 package="eu.willricard.flap">
-  <application android:label="Flap" android:icon="@drawable/ic_launcher">
-    <activity android:name="eu.willricard.flap.FlapNativeActivity"
-    android:label="Flap" android:configChanges="orientation">
-      <meta-data android:name="android.app.lib_name"
-      android:value="flap" />
-      <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
-        <category android:name="android.intent.category.LAUNCHER" />
-      </intent-filter>
-    </activity>
-  </application>
+        <application android:label="Flap"
+        android:icon="@drawable/ic_launcher"
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules">
+                <activity android:name="eu.willricard.flap.FlapNativeActivity"
+                android:label="Flap"
+                android:configChanges="orientation">
+                        <meta-data android:name="android.app.lib_name"
+                        android:value="flap" />
+                        <intent-filter>
+                                <action android:name="android.intent.action.MAIN" />
+                                <category android:name="android.intent.category.LAUNCHER" />
+                        </intent-filter>
+                </activity>
+        </application>
 </manifest>

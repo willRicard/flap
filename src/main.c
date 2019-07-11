@@ -1,9 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
+#include <sulfur/debug.h>
 #include <sulfur/device.h>
-#include <sulfur/instance.h>
 #include <sulfur/pipeline.h>
 #include <sulfur/swapchain.h>
 
@@ -14,9 +10,9 @@
 #include "window.h"
 
 // Clear blue sky
-const VkClearValue FLAP_CLEAR_COLOR = {{{0.53f, 0.81f, 0.92f, 1.f}}};
+const VkClearValue FLAP_CLEAR_COLOR = {{{0.53F, 0.81F, 0.92F, 1.F}}};
 
-static VkInstance instance;
+static VkInstance instance = VK_NULL_HANDLE;
 static SulfurDevice device = {};
 static SulfurSwapchain swapchain = {};
 
@@ -26,6 +22,10 @@ static VkPipeline pipelines[2] = {};
 static VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
 
 static VkDescriptorSet descriptor_sets[4] = {};
+
+static VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
+
+static VkDebugReportCallbackEXT debug_report_callback = VK_NULL_HANDLE;
 
 static void create_pipelines() {
   VkGraphicsPipelineCreateInfo pipeline_infos[2] = {};
@@ -40,7 +40,7 @@ static void create_pipelines() {
 }
 
 static void create_descriptor_sets() {
-  VkDescriptorPoolSize pool_size;
+  VkDescriptorPoolSize pool_size = {};
   pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
   pool_size.descriptorCount = swapchain.image_count;
 
@@ -56,7 +56,7 @@ static void create_descriptor_sets() {
     window_fail_with_error("vkCreateDescriptorPool");
   }
 
-  VkDescriptorSetLayout layouts[3];
+  VkDescriptorSetLayout layouts[3] = {0};
   for (uint32_t i = 0; i < swapchain.image_count; ++i) {
     layouts[i] = sprite_get_descriptor_set_layout();
   }
@@ -112,9 +112,7 @@ static void record_command_buffers() {
   }
 }
 
-int main() {
-  srand((unsigned int)time(NULL));
-
+int main(void) {
   window_init();
 
   static const VkApplicationInfo app_info = {
@@ -125,15 +123,45 @@ int main() {
       .engineVersion = VK_MAKE_VERSION(1, 0, 0),
       .apiVersion = VK_MAKE_VERSION(1, 0, 0)};
 
-  uint32_t surface_extension_count = 0;
-  const char **surface_extensions =
-      window_get_extensions(&surface_extension_count);
+  uint32_t layer_count = 0;
+  const char *layers[3] = {};
 
-  if (sulfur_instance_create(&app_info, surface_extension_count,
-                             surface_extensions, &instance) != VK_SUCCESS) {
-    window_fail_with_error("vkCreateInstance");
-    return 1;
+#ifndef NDEBUG
+  sulfur_debug_get_validation_layers(&layer_count, layers);
+#endif
+  uint32_t extension_count = 0;
+  const char **extensions = window_get_extensions(&extension_count);
+
+#ifndef NDEBUG
+  VkBool32 debug_utils_available = VK_FALSE;
+  uint32_t debug_extension_count = 0;
+  sulfur_debug_get_extensions(&debug_extension_count,
+                              &extensions[extension_count],
+                              &debug_utils_available);
+  extension_count += debug_extension_count;
+#endif
+
+  VkInstanceCreateInfo instance_info = {};
+  instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+  instance_info.pNext = NULL;
+  instance_info.flags = 0;
+  instance_info.pApplicationInfo = &app_info;
+  instance_info.enabledLayerCount = layer_count;
+  instance_info.ppEnabledLayerNames = layers;
+  instance_info.enabledExtensionCount = extension_count;
+  instance_info.ppEnabledExtensionNames = extensions;
+
+  vkCreateInstance(&instance_info, NULL, &instance);
+
+#ifndef NDEBUG
+  if (debug_utils_available) {
+    sulfur_debug_messenger_create(instance, window_debug_messenger_callback,
+                                  &debug_messenger);
+  } else {
+    sulfur_debug_report_callback_create(instance, window_debug_report_callback,
+                                        &debug_report_callback);
   }
+#endif
 
   VkSurfaceKHR surface = window_create_surface(instance);
 
@@ -141,7 +169,7 @@ int main() {
 
   sulfur_swapchain_create(&device, surface, &swapchain);
 
-  assets_create_pipeline_cache(&device, &pipeline_cache);
+  assets_create_pipeline_cache(&device, "pipeline_cache.bin", &pipeline_cache);
 
   sprite_init(&device);
 
@@ -179,7 +207,7 @@ int main() {
 
   sprite_quit(&device);
 
-  assets_destroy_pipeline_cache(&device, pipeline_cache);
+  assets_destroy_pipeline_cache(&device, pipeline_cache, "pipeline_cache.bin");
 
   sulfur_swapchain_destroy(&device, &swapchain);
 
@@ -187,6 +215,15 @@ int main() {
 
   window_quit();
   vkDestroySurfaceKHR(instance, surface, NULL);
+
+#ifndef NDEBUG
+  if (debug_utils_available) {
+    sulfur_debug_messenger_destroy(instance, debug_messenger);
+  } else {
+    sulfur_debug_report_callback_destroy(instance, debug_report_callback);
+  }
+#endif
+
   vkDestroyInstance(instance, NULL);
 
   return 0;

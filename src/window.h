@@ -2,6 +2,11 @@
 #define FLAP_WINDOW_H
 #include <vulkan/vulkan.h>
 
+// Window
+#define FLAP_WINDOW_TITLE "Flap"
+#define FLAP_WINDOW_WIDTH 800
+#define FLAP_WINDOW_HEIGHT 450
+
 /**
  * A window for rendering.
  */
@@ -25,5 +30,15 @@ float window_get_time();
 int window_get_thrust();
 
 int window_get_pause();
+
+VKAPI_ATTR VkBool32 VKAPI_CALL window_debug_messenger_callback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+    VkDebugUtilsMessageTypeFlagsEXT message_type,
+    const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data);
+
+VKAPI_ATTR VkBool32 VKAPI_CALL window_debug_report_callback(
+    VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT obj_type,
+    uint64_t src_object, size_t location, int32_t msg_code,
+    const char *layer_prefix, const char *message, void *user_data);
 
 #endif // FLAP_WINDOW_H
