@@ -209,78 +209,28 @@ void sprite_create_descriptor(SulfurDevice *dev,
   vkUpdateDescriptorSets(dev->device, 1, &write_info, 0, NULL);
 }
 
-Sprite *sprite_new(int x, int y, int w, int h) {
+Sprite *sprite_new(float texture_x, float texture_y, float texture_w,
+                   float texture_h) {
   Sprite *sprite = &sprite_vertices[sprite_count++];
 
-  sprite->vertices[0].tx = (float)x / sprite_texture.width;
-  sprite->vertices[0].ty = (float)y / sprite_texture.height;
+  const float left_texcoord = texture_x / sprite_texture.width;
+  const float top_texcoord = texture_y / sprite_texture.height;
+  const float right_texcoord =
+      (texture_x + texture_w) / (float)sprite_texture.width;
+  const float bottom_texcoord =
+      (texture_y + texture_h) / (float)sprite_texture.height;
 
-  sprite->vertices[1].tx = (float)x / (float)sprite_texture.width;
-  sprite->vertices[1].ty = (float)(y + h) / (float)sprite_texture.height;
+  sprite->vertices[0].tx = left_texcoord;
+  sprite->vertices[0].ty = top_texcoord;
 
-  sprite->vertices[2].tx = (float)(x + w) / (float)sprite_texture.width;
-  sprite->vertices[2].ty = (float)(y + h) / (float)sprite_texture.height;
+  sprite->vertices[1].tx = left_texcoord;
+  sprite->vertices[1].ty = bottom_texcoord;
 
-  sprite->vertices[3].tx = (float)(x + w) / (float)sprite_texture.width;
-  sprite->vertices[3].ty = (float)y / (float)sprite_texture.height;
+  sprite->vertices[2].tx = right_texcoord;
+  sprite->vertices[2].ty = bottom_texcoord;
+
+  sprite->vertices[3].tx = right_texcoord;
+  sprite->vertices[3].ty = top_texcoord;
 
   return sprite;
-}
-
-void sprite_set_x(Sprite *sprite, float x) {
-  float w = sprite->vertices[2].x - sprite->vertices[0].x;
-  sprite->vertices[0].x = x;
-  sprite->vertices[1].x = x;
-  sprite->vertices[2].x = x + w;
-  sprite->vertices[3].x = x + w;
-}
-
-void sprite_set_y(Sprite *sprite, float y) {
-  float h = sprite->vertices[1].y - sprite->vertices[0].y;
-  sprite->vertices[0].y = y;
-  sprite->vertices[1].y = y + h;
-  sprite->vertices[2].y = y + h;
-  sprite->vertices[3].y = y;
-}
-
-void sprite_set_w(Sprite *sprite, float w) {
-  float x = sprite->vertices[0].x;
-  sprite->vertices[2].x = x + w;
-  sprite->vertices[3].x = x + w;
-}
-
-void sprite_set_h(Sprite *sprite, float h) {
-  float y = sprite->vertices[0].y;
-  sprite->vertices[1].y = y + h;
-  sprite->vertices[2].y = y + h;
-}
-
-void sprite_set_th(Sprite *sprite, float th) {
-  float ty = sprite->vertices[0].ty;
-  sprite->vertices[1].ty = ty + th;
-  sprite->vertices[2].ty = ty + th;
-}
-
-float sprite_get_x(Sprite *sprite) { return sprite->vertices[0].x; }
-
-float sprite_get_y(Sprite *sprite) { return sprite->vertices[0].y; }
-
-float sprite_get_w(Sprite *sprite) {
-  return sprite->vertices[2].x - sprite->vertices[1].x;
-}
-
-float sprite_get_h(Sprite *sprite) {
-  return sprite->vertices[1].y - sprite->vertices[0].y;
-}
-
-int sprite_intersect(Sprite *s1, Sprite *s2) {
-  float x1 = sprite_get_x(s1);
-  float y1 = sprite_get_y(s1);
-  float w1 = sprite_get_w(s1);
-  float h1 = sprite_get_h(s1);
-  float x2 = sprite_get_x(s2);
-  float y2 = sprite_get_y(s2);
-  float w2 = sprite_get_w(s2);
-  float h2 = sprite_get_h(s2);
-  return (x1 < x2 + w2 && x2 < x1 + w1 && y1 < y2 + h2 && y2 < y1 + h1);
 }

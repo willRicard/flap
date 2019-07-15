@@ -4,23 +4,6 @@
 
 #include <sulfur/device.h>
 
-#define FLAP_SPRITE_TEXTURE_BIRD_X 0
-#define FLAP_SPRITE_TEXTURE_BIRD_Y 0
-#define FLAP_SPRITE_TEXTURE_BIRD_WIDTH 32
-#define FLAP_SPRITE_TEXTURE_BIRD_HEIGHT 32
-
-#define FLAP_SPRITE_TEXTURE_PIPE_HEAD_X 64
-#define FLAP_SPRITE_TEXTURE_PIPE_HEAD_Y 0
-#define FLAP_SPRITE_TEXTURE_PIPE_HEAD_WIDTH 32
-#define FLAP_SPRITE_TEXTURE_PIPE_HEAD_HEIGHT 16
-
-#define FLAP_SPRITE_TEXTURE_PIPE_BODY_X 102
-#define FLAP_SPRITE_TEXTURE_PIPE_BODY_Y 0
-#define FLAP_SPRITE_TEXTURE_PIPE_BODY_WIDTH 20
-#define FLAP_SPRITE_TEXTURE_PIPE_BODY_HEIGHT 32
-
-#define FLAP_SPRITE_PIPE_HEAD_HEIGHT 16.F / 32.F
-
 /**
  * A sprite vertex.
  */
@@ -80,29 +63,82 @@ void sprite_create_descriptor(SulfurDevice *dev,
 /**
  * Make a new sprite from a portion of the texture.
  */
-Sprite *sprite_new(int x, int y, int w, int h);
+Sprite *sprite_new(float texture_x, float texture_y, float texture_w,
+                   float texture_h);
 
-void sprite_set_x(Sprite *sprite, float x);
+inline void sprite_set_x(Sprite *sprite, float left) {
+  const float width = sprite->vertices[2].x - sprite->vertices[0].x;
+  const float right = left + width;
+  sprite->vertices[0].x = left;
+  sprite->vertices[1].x = left;
+  sprite->vertices[2].x = right;
+  sprite->vertices[3].x = right;
+}
 
-void sprite_set_y(Sprite *sprite, float y);
+inline void sprite_set_y(Sprite *sprite, float top) {
+  const float height = sprite->vertices[1].y - sprite->vertices[0].y;
+  const float bottom = top + height;
+  sprite->vertices[0].y = top;
+  sprite->vertices[1].y = bottom;
+  sprite->vertices[2].y = bottom;
+  sprite->vertices[3].y = top;
+}
 
-void sprite_set_w(Sprite *sprite, float w);
+inline void sprite_set_w(Sprite *sprite, float w) {
+  float x = sprite->vertices[0].x;
+  sprite->vertices[2].x = x + w;
+  sprite->vertices[3].x = x + w;
+}
 
-void sprite_set_h(Sprite *sprite, float h);
+inline void sprite_set_h(Sprite *sprite, float h) {
+  float y = sprite->vertices[0].y;
+  sprite->vertices[1].y = y + h;
+  sprite->vertices[2].y = y + h;
+}
 
-void sprite_set_th(Sprite *sprite, float th);
+inline void sprite_set_th(Sprite *sprite, float th) {
+  float ty = sprite->vertices[0].ty;
+  sprite->vertices[1].ty = ty + th;
+  sprite->vertices[2].ty = ty + th;
+}
 
-float sprite_get_x(Sprite *sprite);
+inline const float sprite_get_x(Sprite *sprite) {
+  return sprite->vertices[0].x;
+}
 
-float sprite_get_y(Sprite *sprite);
+inline const float sprite_get_right(Sprite *sprite) {
+  return sprite->vertices[2].x;
+}
 
-float sprite_get_w(Sprite *sprite);
+inline const float sprite_get_y(Sprite *sprite) {
+  return sprite->vertices[0].y;
+}
 
-float sprite_get_h(Sprite *sprite);
+inline const float sprite_get_bottom(Sprite *sprite) {
+  return sprite->vertices[1].y;
+}
+
+inline const float sprite_get_w(Sprite *sprite) {
+  return sprite->vertices[2].x - sprite->vertices[1].x;
+}
+
+inline const float sprite_get_h(Sprite *sprite) {
+  return sprite->vertices[1].y - sprite->vertices[0].y;
+}
 
 /**
  * Collision detection.
  */
-int sprite_intersect(Sprite *s1, Sprite *s2);
+inline const int sprite_intersect(Sprite *s1, Sprite *s2) {
+  const float left1 = sprite_get_x(s1);
+  const float top1 = sprite_get_y(s1);
+  const float right1 = sprite_get_right(s1);
+  const float bottom1 = sprite_get_bottom(s1);
+  const float left2 = sprite_get_x(s2);
+  const float top2 = sprite_get_y(s2);
+  const float right2 = sprite_get_right(s2);
+  const float bottom2 = sprite_get_bottom(s2);
+  return (left1 < right2 && left2 < right1 && top1 < bottom2 && top2 < bottom1);
+}
 
 #endif // FLAP_SPRITE_H

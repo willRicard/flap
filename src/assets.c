@@ -16,14 +16,12 @@
  * You are responsible for freeing the allocated memory.
  */
 char *assets_base_read_file(const char *file_path, size_t *data_size) {
-  char full_path[64] = {0};
+  char full_path[64] = {'a', 's', 's', 'e', 't', 's', '/'};
 
 #ifdef _WIN32
-  strncat_s(full_path, 64, "assets/", 63);
-  strncat_s(full_path, 64, file_path, 63);
+  strncat_s(full_path, 64, file_path, 56);
 #else
-  strncat(full_path, "assets/", 63);
-  strncat(full_path, file_path, 63);
+  strncat(full_path, file_path, 56);
 #endif
 
   FILE *file = NULL;
@@ -39,7 +37,7 @@ char *assets_base_read_file(const char *file_path, size_t *data_size) {
   }
 
   fseek(file, 0, SEEK_END);
-  size_t size = (size_t)ftell(file);
+  const size_t size = (size_t)ftell(file);
 
   char *data = NULL;
   data = (char *)malloc(size * sizeof(char));

@@ -10,6 +10,10 @@
 
 #include "flap.h"
 
+static const char *kFlapWindowTitle = "Flap";
+static const int kFlapWindowWidth = 800;
+static const int kFlapWindowHeight = 450;
+
 static GLFWwindow *window = NULL;
 static int thrust = 0;
 static int pause = 0;
@@ -55,12 +59,12 @@ void window_init() {
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-  window = glfwCreateWindow(FLAP_WINDOW_WIDTH, FLAP_WINDOW_HEIGHT, "Flap", NULL,
+  window = glfwCreateWindow(kFlapWindowWidth, kFlapWindowHeight, kFlapWindowTitle, NULL,
                             NULL);
   glfwSetKeyCallback(window, key_callback);
 }
 
-VkSurfaceKHR window_create_surface(VkInstance instance) {
+VkSurfaceKHR window_create_surface(const VkInstance instance) {
   VkSurfaceKHR surface = VK_NULL_HANDLE;
   glfwCreateWindowSurface(instance, window, NULL, &surface);
   return surface;

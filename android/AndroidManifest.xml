@@ -7,6 +7,7 @@ package="eu.willricard.flap">
         android:fullBackupContent="@xml/backup_rules">
                 <activity android:name="eu.willricard.flap.FlapNativeActivity"
                 android:label="Flap"
+                android:screenOrientation="userLandscape"
                 android:configChanges="orientation">
                         <meta-data android:name="android.app.lib_name"
                         android:value="flap" />

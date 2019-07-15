@@ -2,11 +2,6 @@
 #define FLAP_WINDOW_H
 #include <vulkan/vulkan.h>
 
-// Window
-#define FLAP_WINDOW_TITLE "Flap"
-#define FLAP_WINDOW_WIDTH 800
-#define FLAP_WINDOW_HEIGHT 450
-
 /**
  * A window for rendering.
  */
@@ -14,7 +9,7 @@ void window_init();
 
 void window_quit();
 
-VkSurfaceKHR window_create_surface(VkInstance instance);
+VkSurfaceKHR window_create_surface(const VkInstance instance);
 
 void window_update();
 

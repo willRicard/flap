@@ -2,6 +2,7 @@
 .gradle
 .idea
 build
+release
 android.iml
 gradlew
 gradlew.bat

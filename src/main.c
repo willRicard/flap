@@ -10,7 +10,7 @@
 #include "window.h"
 
 // Clear blue sky
-const VkClearValue FLAP_CLEAR_COLOR = {{{0.53F, 0.81F, 0.92F, 1.F}}};
+static const VkClearValue kFlapClearColor = {{{0.53F, 0.81F, 0.92F, 1.F}}};
 
 static VkInstance instance = VK_NULL_HANDLE;
 static SulfurDevice device = {};
@@ -56,7 +56,7 @@ static void create_descriptor_sets() {
     window_fail_with_error("vkCreateDescriptorPool");
   }
 
-  VkDescriptorSetLayout layouts[3] = {0};
+  VkDescriptorSetLayout layouts[4] = {0};
   for (uint32_t i = 0; i < swapchain.image_count; ++i) {
     layouts[i] = sprite_get_descriptor_set_layout();
   }
@@ -79,22 +79,23 @@ static void create_descriptor_sets() {
 }
 
 static void record_command_buffers() {
-  VkCommandBufferBeginInfo begin_info = {};
-  begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-  begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+  static const VkCommandBufferBeginInfo begin_info = {
+      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+      .flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT};
+
+  VkRenderPassBeginInfo render_pass_info = {};
+  render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+  render_pass_info.renderPass = swapchain.render_pass;
+  render_pass_info.renderArea.extent = swapchain.info.imageExtent;
+  render_pass_info.clearValueCount = 1;
+  render_pass_info.pClearValues = &kFlapClearColor;
 
   for (uint32_t i = 0; i < swapchain.image_count; i++) {
     VkCommandBuffer cmd_buf = swapchain.command_buffers[i];
 
     vkBeginCommandBuffer(cmd_buf, &begin_info);
 
-    VkRenderPassBeginInfo render_pass_info = {};
-    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    render_pass_info.renderPass = swapchain.render_pass;
     render_pass_info.framebuffer = swapchain.framebuffers[i];
-    render_pass_info.renderArea.extent = swapchain.info.imageExtent;
-    render_pass_info.clearValueCount = 1;
-    render_pass_info.pClearValues = &FLAP_CLEAR_COLOR;
     vkCmdBeginRenderPass(cmd_buf, &render_pass_info,
                          VK_SUBPASS_CONTENTS_INLINE);
 
@@ -124,11 +125,12 @@ int main(void) {
       .apiVersion = VK_MAKE_VERSION(1, 0, 0)};
 
   uint32_t layer_count = 0;
-  const char *layers[3] = {};
+  const char *layers[3] = {NULL};
 
 #ifndef NDEBUG
   sulfur_debug_get_validation_layers(&layer_count, layers);
 #endif
+
   uint32_t extension_count = 0;
   const char **extensions = window_get_extensions(&extension_count);
 
@@ -163,7 +165,7 @@ int main(void) {
   }
 #endif
 
-  VkSurfaceKHR surface = window_create_surface(instance);
+  const VkSurfaceKHR surface = window_create_surface(instance);
 
   sulfur_device_create(instance, surface, &device);
 
