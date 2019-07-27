@@ -66,7 +66,7 @@ void sprite_create_descriptor(SulfurDevice *dev,
 Sprite *sprite_new(float texture_x, float texture_y, float texture_w,
                    float texture_h);
 
-inline void sprite_set_x(Sprite *sprite, float left) {
+static inline void sprite_set_x(Sprite *sprite, float left) {
   const float width = sprite->vertices[2].x - sprite->vertices[0].x;
   const float right = left + width;
   sprite->vertices[0].x = left;
@@ -75,7 +75,7 @@ inline void sprite_set_x(Sprite *sprite, float left) {
   sprite->vertices[3].x = right;
 }
 
-inline void sprite_set_y(Sprite *sprite, float top) {
+static inline void sprite_set_y(Sprite *sprite, float top) {
   const float height = sprite->vertices[1].y - sprite->vertices[0].y;
   const float bottom = top + height;
   sprite->vertices[0].y = top;
@@ -84,52 +84,52 @@ inline void sprite_set_y(Sprite *sprite, float top) {
   sprite->vertices[3].y = top;
 }
 
-inline void sprite_set_w(Sprite *sprite, float w) {
+static inline void sprite_set_w(Sprite *sprite, float w) {
   float x = sprite->vertices[0].x;
   sprite->vertices[2].x = x + w;
   sprite->vertices[3].x = x + w;
 }
 
-inline void sprite_set_h(Sprite *sprite, float h) {
+static inline void sprite_set_h(Sprite *sprite, float h) {
   float y = sprite->vertices[0].y;
   sprite->vertices[1].y = y + h;
   sprite->vertices[2].y = y + h;
 }
 
-inline void sprite_set_th(Sprite *sprite, float th) {
+static inline void sprite_set_th(Sprite *sprite, float th) {
   float ty = sprite->vertices[0].ty;
   sprite->vertices[1].ty = ty + th;
   sprite->vertices[2].ty = ty + th;
 }
 
-inline const float sprite_get_x(Sprite *sprite) {
+static inline const float sprite_get_x(Sprite *sprite) {
   return sprite->vertices[0].x;
 }
 
-inline const float sprite_get_right(Sprite *sprite) {
+static inline const float sprite_get_right(Sprite *sprite) {
   return sprite->vertices[2].x;
 }
 
-inline const float sprite_get_y(Sprite *sprite) {
+static inline const float sprite_get_y(Sprite *sprite) {
   return sprite->vertices[0].y;
 }
 
-inline const float sprite_get_bottom(Sprite *sprite) {
+static inline const float sprite_get_bottom(Sprite *sprite) {
   return sprite->vertices[1].y;
 }
 
-inline const float sprite_get_w(Sprite *sprite) {
+static inline const float sprite_get_w(Sprite *sprite) {
   return sprite->vertices[2].x - sprite->vertices[1].x;
 }
 
-inline const float sprite_get_h(Sprite *sprite) {
+static inline const float sprite_get_h(Sprite *sprite) {
   return sprite->vertices[1].y - sprite->vertices[0].y;
 }
 
 /**
  * Collision detection.
  */
-inline const int sprite_intersect(Sprite *s1, Sprite *s2) {
+static inline const int sprite_intersect(Sprite *s1, Sprite *s2) {
   const float left1 = sprite_get_x(s1);
   const float top1 = sprite_get_y(s1);
   const float right1 = sprite_get_right(s1);

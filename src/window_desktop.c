@@ -59,8 +59,8 @@ void window_init() {
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-  window = glfwCreateWindow(kFlapWindowWidth, kFlapWindowHeight, kFlapWindowTitle, NULL,
-                            NULL);
+  window = glfwCreateWindow(kFlapWindowWidth, kFlapWindowHeight,
+                            kFlapWindowTitle, NULL, NULL);
   glfwSetKeyCallback(window, key_callback);
 }
 

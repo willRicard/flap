@@ -1,7 +1,6 @@
 #include "game.h"
 
 #include <stddef.h>
-#include <stdio.h>
 #include <time.h>
 
 #include "xoroshiro.h"
@@ -57,10 +56,11 @@ static const float kPipeBodyTextureY = 0.F;
 static const float kPipeBodyTextureWidth = 20.F;
 static const float kPipeBodyTextureHeight = 32.F;
 
-static const float kPipeBodyWidth =
-    kPipeBodyTextureWidth / kPipeHeadTextureWidth * kPipeWidth;
+// kPipeBodyWidth = kPipeBodyTextureWidth / kPipeHeadTextureWidth * kPipeWidth;
+static const float kPipeBodyWidth = 0.075F;
 
-static const float kPipeBodyX = ((float)kPipeWidth - kPipeBodyWidth) / 2.F;
+// kPipeBodyX = (kPipeWidth - kPipeBodyWidth) / 2.F;
+static const float kPipeBodyX = 0.0225F;
 
 static uint64_t random_generator_state[2] = {0};
 
@@ -80,13 +80,15 @@ static Sprite *bird = NULL;
 
 static Sprite *pipes[4 * FLAP_NUM_PIPES] = {NULL};
 static int next_pipe = 0;
-static float pipe_gap = kInitialPipeGap;
+static float pipe_gap = 0.F;
 
 /**
  * Reset game state.
  */
 static void game_reset() {
   game_state = STATE_PLAYING;
+
+  pipe_gap = kInitialPipeGap;
 
   sprite_set_x(bird, kBirdX);
   sprite_set_y(bird, kBirdY);
@@ -100,7 +102,6 @@ static void game_reset() {
                                          (kMaxPipeHeight - kMinPipeHeight);
 
     // Top pipe body
-
     sprite_set_x(pipes[i], x + kPipeBodyX);
     sprite_set_y(pipes[i], kScreenTop);
     sprite_set_w(pipes[i], kPipeBodyWidth);

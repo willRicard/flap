@@ -3,6 +3,8 @@
 #include <sulfur/pipeline.h>
 #include <sulfur/swapchain.h>
 
+#include <string.h>
+
 #include "assets.h"
 #include "flap.h"
 #include "game.h"
@@ -13,22 +15,22 @@
 static const VkClearValue kFlapClearColor = {{{0.53F, 0.81F, 0.92F, 1.F}}};
 
 static VkInstance instance = VK_NULL_HANDLE;
-static SulfurDevice device = {};
-static SulfurSwapchain swapchain = {};
+static SulfurDevice device = {0};
+static SulfurSwapchain swapchain = {0};
 
 static VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
-static VkPipeline pipelines[2] = {};
+static VkPipeline pipelines[2] = {0};
 
 static VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
 
-static VkDescriptorSet descriptor_sets[4] = {};
+static VkDescriptorSet descriptor_sets[4] = {0};
 
 static VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
 
 static VkDebugReportCallbackEXT debug_report_callback = VK_NULL_HANDLE;
 
 static void create_pipelines() {
-  VkGraphicsPipelineCreateInfo pipeline_infos[2] = {};
+  VkGraphicsPipelineCreateInfo pipeline_infos[2] = {0};
   for (uint32_t i = 0; i < 2; i++) {
     sulfur_pipeline_make_default_create_info(&swapchain, &pipeline_infos[i]);
   }
@@ -40,11 +42,11 @@ static void create_pipelines() {
 }
 
 static void create_descriptor_sets() {
-  VkDescriptorPoolSize pool_size = {};
+  VkDescriptorPoolSize pool_size = {0};
   pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
   pool_size.descriptorCount = swapchain.image_count;
 
-  VkDescriptorPoolCreateInfo pool_info = {};
+  VkDescriptorPoolCreateInfo pool_info = {0};
   pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
   pool_info.poolSizeCount = 1;
   pool_info.pPoolSizes = &pool_size;
@@ -61,7 +63,7 @@ static void create_descriptor_sets() {
     layouts[i] = sprite_get_descriptor_set_layout();
   }
 
-  VkDescriptorSetAllocateInfo alloc_info = {};
+  VkDescriptorSetAllocateInfo alloc_info = {0};
   alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
   alloc_info.descriptorPool = descriptor_pool;
   alloc_info.descriptorSetCount = swapchain.image_count;
@@ -83,7 +85,7 @@ static void record_command_buffers() {
       .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
       .flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT};
 
-  VkRenderPassBeginInfo render_pass_info = {};
+  VkRenderPassBeginInfo render_pass_info = {0};
   render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
   render_pass_info.renderPass = swapchain.render_pass;
   render_pass_info.renderArea.extent = swapchain.info.imageExtent;
@@ -132,7 +134,10 @@ int main(void) {
 #endif
 
   uint32_t extension_count = 0;
-  const char **extensions = window_get_extensions(&extension_count);
+  char *extensions[3] = {NULL};
+
+  const char **window_extensions = window_get_extensions(&extension_count);
+  memcpy(extensions, window_extensions, extension_count * sizeof(const char *));
 
 #ifndef NDEBUG
   VkBool32 debug_utils_available = VK_FALSE;
@@ -143,7 +148,7 @@ int main(void) {
   extension_count += debug_extension_count;
 #endif
 
-  VkInstanceCreateInfo instance_info = {};
+  VkInstanceCreateInfo instance_info = {0};
   instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
   instance_info.pNext = NULL;
   instance_info.flags = 0;

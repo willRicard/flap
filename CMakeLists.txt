@@ -52,4 +52,8 @@ target_link_libraries(flap PUBLIC
   Vulkan::Vulkan
   glfw)
 
+if(NOT WIN32)
+  target_link_libraries(flap PUBLIC m)
+endif(NOT WIN32)
+
 endif(FLAP_ANDROID)

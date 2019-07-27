@@ -62,7 +62,11 @@ char *assets_base_read_file(const char *file_path, size_t *data_size) {
  */
 void assets_base_write_file(const char *data, size_t data_size,
                             const char *file_path) {
+#ifdef _WIN32
+  FILE *file = fopen(file_path, "wb");
+#else
   FILE *file = fopen(file_path, "wbe");
+#endif
 
   fwrite(data, data_size, 1, file);
 
@@ -101,7 +105,7 @@ VkResult assets_create_pipeline_cache(SulfurDevice *dev, const char *file_path,
   // It is OK for `initial_data` to be NULL
   // since we would create an empty cache.
 
-  VkPipelineCacheCreateInfo cache_info = {};
+  VkPipelineCacheCreateInfo cache_info = {0};
   cache_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
   cache_info.pNext = NULL;
   cache_info.flags = 0;

@@ -36,14 +36,14 @@ static const uint16_t sprite_indices[] = {
     160, 161, 162, 162, 160, 163, 164, 165, 166, 166, 164, 167,
 };
 
-static SulfurTexture sprite_texture = {};
+static SulfurTexture sprite_texture = {0};
 static VkDescriptorSetLayout sprite_descriptor_set_layout = VK_NULL_HANDLE;
 static VkPipelineLayout sprite_pipeline_layout = VK_NULL_HANDLE;
 
 static SulfurShader sprite_shaders[2];
 
-static SulfurBuffer sprite_vertex_buffer = {};
-static SulfurBuffer sprite_index_buffer = {};
+static SulfurBuffer sprite_vertex_buffer = {0};
+static SulfurBuffer sprite_index_buffer = {0};
 
 void sprite_init(SulfurDevice *dev) {
   VkResult result =
@@ -71,7 +71,7 @@ void sprite_init(SulfurDevice *dev) {
       .descriptorCount = 1,
       .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT};
 
-  VkDescriptorSetLayoutCreateInfo descriptor_layout_info = {};
+  VkDescriptorSetLayoutCreateInfo descriptor_layout_info = {0};
   descriptor_layout_info.sType =
       VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
   descriptor_layout_info.bindingCount = 1;
@@ -84,7 +84,7 @@ void sprite_init(SulfurDevice *dev) {
                            "vkCreateDescriptorSetLayout");
   }
 
-  VkPipelineLayoutCreateInfo pipeline_layout_info = {};
+  VkPipelineLayoutCreateInfo pipeline_layout_info = {0};
   pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
   pipeline_layout_info.setLayoutCount = 1;
   pipeline_layout_info.pSetLayouts = &sprite_descriptor_set_layout;
@@ -108,7 +108,7 @@ void sprite_init(SulfurDevice *dev) {
       VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &sprite_index_buffer);
 
-  SulfurBuffer tmp_buf = {};
+  SulfurBuffer tmp_buf = {0};
   sulfur_buffer_create(dev, sizeof(sprite_indices),
                        VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
                            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -149,18 +149,18 @@ void sprite_get_pipeline_create_info(
   pipeline_info->layout = sprite_pipeline_layout;
 
   // Add vertex attributes
-  static VkVertexInputBindingDescription sprite_vertex_binding = {};
+  static VkVertexInputBindingDescription sprite_vertex_binding = {0};
   sprite_vertex_binding.binding = 0;
   sprite_vertex_binding.stride = 4 * sizeof(float);
   sprite_vertex_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-  static VkVertexInputAttributeDescription sprite_vertex_attribute = {};
+  static VkVertexInputAttributeDescription sprite_vertex_attribute = {0};
   sprite_vertex_attribute.location = 0;
   sprite_vertex_attribute.binding = 0;
   sprite_vertex_attribute.format = VK_FORMAT_R32G32B32A32_SFLOAT;
   sprite_vertex_attribute.offset = 0;
 
-  static VkPipelineVertexInputStateCreateInfo sprite_vertex_input_info = {};
+  static VkPipelineVertexInputStateCreateInfo sprite_vertex_input_info = {0};
   sprite_vertex_input_info.sType =
       VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
   sprite_vertex_input_info.vertexBindingDescriptionCount = 1;
@@ -192,12 +192,12 @@ void sprite_record_command_buffer(VkCommandBuffer cmd_buf) {
 
 void sprite_create_descriptor(SulfurDevice *dev,
                               VkDescriptorSet descriptor_set) {
-  VkDescriptorImageInfo image_info = {};
+  VkDescriptorImageInfo image_info = {0};
   image_info.sampler = sprite_texture.sampler;
   image_info.imageView = sprite_texture.image_view;
   image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-  VkWriteDescriptorSet write_info = {};
+  VkWriteDescriptorSet write_info = {0};
   write_info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
   write_info.dstSet = descriptor_set;
   write_info.dstBinding = 0;
