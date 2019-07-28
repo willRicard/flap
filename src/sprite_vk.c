@@ -8,7 +8,7 @@
 #include <sulfur/swapchain.h>
 #include <sulfur/texture.h>
 
-#include "assets.h"
+#include "assets_vk.h"
 #include "flap.h"
 #include "window.h"
 
@@ -45,25 +45,15 @@ static SulfurShader sprite_shaders[2];
 static SulfurBuffer sprite_vertex_buffer = {0};
 static SulfurBuffer sprite_index_buffer = {0};
 
-void sprite_init(SulfurDevice *dev) {
-  VkResult result =
-      assets_create_shader(dev, "shaders/sprite.vert.spv",
-                           VK_SHADER_STAGE_VERTEX_BIT, &sprite_shaders[0]);
-  if (result != VK_SUCCESS) {
-    window_fail_with_error("Error loading sprite vertex shader.");
-  }
-  result =
-      assets_create_shader(dev, "shaders/sprite.frag.spv",
-                           VK_SHADER_STAGE_FRAGMENT_BIT, &sprite_shaders[1]);
-  if (result != VK_SUCCESS) {
-    window_fail_with_error("Error loading sprite fragment shader");
-  }
+void sprite_vk_init(SulfurDevice *dev) {
+  assets_vk_create_shader(dev, "shaders/sprite.vert.spv",
+                          VK_SHADER_STAGE_VERTEX_BIT, &sprite_shaders[0]);
 
-  result = assets_create_texture(dev, "images/atlas.png",
-                                 VK_FORMAT_R8G8B8A8_UNORM, &sprite_texture);
-  if (result != VK_SUCCESS) {
-    window_fail_with_error("Error loading sprite images.");
-  }
+  assets_vk_create_shader(dev, "shaders/sprite.frag.spv",
+                          VK_SHADER_STAGE_FRAGMENT_BIT, &sprite_shaders[1]);
+
+  assets_vk_create_texture(dev, "images/atlas.png", VK_FORMAT_R8G8B8A8_UNORM,
+                           &sprite_texture);
 
   VkDescriptorSetLayoutBinding descriptor_layout_binding = {
       .binding = 0,
@@ -77,8 +67,9 @@ void sprite_init(SulfurDevice *dev) {
   descriptor_layout_info.bindingCount = 1;
   descriptor_layout_info.pBindings = &descriptor_layout_binding;
 
-  result = vkCreateDescriptorSetLayout(dev->device, &descriptor_layout_info,
-                                       NULL, &sprite_descriptor_set_layout);
+  VkResult result =
+      vkCreateDescriptorSetLayout(dev->device, &descriptor_layout_info, NULL,
+                                  &sprite_descriptor_set_layout);
   if (result != VK_SUCCESS) {
     window_fail_with_error("Error initializing sprite descriptor sets: "
                            "vkCreateDescriptorSetLayout");
@@ -122,7 +113,7 @@ void sprite_init(SulfurDevice *dev) {
   sulfur_buffer_destroy(dev, &tmp_buf);
 }
 
-void sprite_quit(SulfurDevice *dev) {
+void sprite_vk_quit(SulfurDevice *dev) {
   vkDeviceWaitIdle(dev->device);
 
   sulfur_buffer_destroy(dev, &sprite_vertex_buffer);

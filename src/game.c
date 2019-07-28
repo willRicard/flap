@@ -209,7 +209,7 @@ void game_update() {
 
     // Set pipes back to the far right
     if (sprite_get_x(pipes[next_pipe]) < kScreenLeft - kPipeWidth) {
-      float far_away = kScreenWidth;
+      float far_away = kScreenRight;
 
       pipe_gap = kInitialPipeGap - (now / kDeadline) * kInitialPipeGap;
 

@@ -1,8 +1,5 @@
 #ifndef FLAP_SPRITE_H
 #define FLAP_SPRITE_H
-#include <vulkan/vulkan.h>
-
-#include <sulfur/device.h>
 
 /**
  * A sprite vertex.
@@ -22,43 +19,9 @@ typedef struct Sprite {
 } Sprite;
 
 /**
- * Load shaders and resources.
- */
-void sprite_init(SulfurDevice *dev);
-
-/**
- * Free shaders and resources.
- */
-void sprite_quit(SulfurDevice *device);
-
-/**
- * Build pipeline create info.
- */
-void sprite_get_pipeline_create_info(
-    VkGraphicsPipelineCreateInfo *pipeline_info);
-
-VkPipelineLayout sprite_get_pipeline_layout(void);
-
-/**
- * Get the descriptor set layout for the texture.
- */
-VkDescriptorSetLayout sprite_get_descriptor_set_layout(void);
-
-/**
  * Update vertex data.
  */
 void sprite_update(void);
-
-/**
- * Bake rendering commands.
- */
-void sprite_record_command_buffer(VkCommandBuffer cmd_buf);
-
-/**
- * Create a descriptor set for the texture.
- */
-void sprite_create_descriptor(SulfurDevice *dev,
-                              VkDescriptorSet descriptor_set);
 
 /**
  * Make a new sprite from a portion of the texture.
@@ -102,34 +65,34 @@ static inline void sprite_set_th(Sprite *sprite, float th) {
   sprite->vertices[2].ty = ty + th;
 }
 
-static inline const float sprite_get_x(Sprite *sprite) {
+static inline float sprite_get_x(Sprite *sprite) {
   return sprite->vertices[0].x;
 }
 
-static inline const float sprite_get_right(Sprite *sprite) {
+static inline float sprite_get_right(Sprite *sprite) {
   return sprite->vertices[2].x;
 }
 
-static inline const float sprite_get_y(Sprite *sprite) {
+static inline float sprite_get_y(Sprite *sprite) {
   return sprite->vertices[0].y;
 }
 
-static inline const float sprite_get_bottom(Sprite *sprite) {
+static inline float sprite_get_bottom(Sprite *sprite) {
   return sprite->vertices[1].y;
 }
 
-static inline const float sprite_get_w(Sprite *sprite) {
+static inline float sprite_get_w(Sprite *sprite) {
   return sprite->vertices[2].x - sprite->vertices[1].x;
 }
 
-static inline const float sprite_get_h(Sprite *sprite) {
+static inline float sprite_get_h(Sprite *sprite) {
   return sprite->vertices[1].y - sprite->vertices[0].y;
 }
 
 /**
  * Collision detection.
  */
-static inline const int sprite_intersect(Sprite *s1, Sprite *s2) {
+static inline int sprite_intersect(Sprite *s1, Sprite *s2) {
   const float left1 = sprite_get_x(s1);
   const float top1 = sprite_get_y(s1);
   const float right1 = sprite_get_right(s1);

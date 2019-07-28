@@ -5,11 +5,11 @@
 
 #include <string.h>
 
-#include "assets.h"
+#include "assets_vk.h"
 #include "flap.h"
 #include "game.h"
-#include "sprite.h"
-#include "window.h"
+#include "sprite_vk.h"
+#include "window_vk.h"
 
 // Clear blue sky
 static const VkClearValue kFlapClearColor = {{{0.53F, 0.81F, 0.92F, 1.F}}};
@@ -134,9 +134,9 @@ int main(void) {
 #endif
 
   uint32_t extension_count = 0;
-  char *extensions[3] = {NULL};
+  const char *extensions[3] = {NULL};
 
-  const char **window_extensions = window_get_extensions(&extension_count);
+  const char **window_extensions = window_vk_get_extensions(&extension_count);
   memcpy(extensions, window_extensions, extension_count * sizeof(const char *));
 
 #ifndef NDEBUG
@@ -162,23 +162,24 @@ int main(void) {
 
 #ifndef NDEBUG
   if (debug_utils_available) {
-    sulfur_debug_messenger_create(instance, window_debug_messenger_callback,
+    sulfur_debug_messenger_create(instance, window_vk_debug_messenger_callback,
                                   &debug_messenger);
   } else {
-    sulfur_debug_report_callback_create(instance, window_debug_report_callback,
-                                        &debug_report_callback);
+    sulfur_debug_report_callback_create(
+        instance, window_vk_debug_report_callback, &debug_report_callback);
   }
 #endif
 
-  const VkSurfaceKHR surface = window_create_surface(instance);
+  const VkSurfaceKHR surface = window_vk_create_surface(instance);
 
   sulfur_device_create(instance, surface, &device);
 
   sulfur_swapchain_create(&device, surface, &swapchain);
 
-  assets_create_pipeline_cache(&device, "pipeline_cache.bin", &pipeline_cache);
+  assets_vk_create_pipeline_cache(&device, "pipeline_cache.bin",
+                                  &pipeline_cache);
 
-  sprite_init(&device);
+  sprite_vk_init(&device);
 
   create_pipelines();
 
@@ -212,9 +213,10 @@ int main(void) {
   vkDestroyPipeline(device.device, pipelines[0], NULL);
   vkDestroyPipeline(device.device, pipelines[1], NULL);
 
-  sprite_quit(&device);
+  sprite_vk_quit(&device);
 
-  assets_destroy_pipeline_cache(&device, pipeline_cache, "pipeline_cache.bin");
+  assets_vk_destroy_pipeline_cache(&device, pipeline_cache,
+                                   "pipeline_cache.bin");
 
   sulfur_swapchain_destroy(&device, &swapchain);
 

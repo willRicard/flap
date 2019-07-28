@@ -127,14 +127,14 @@ void window_fail_with_error(const char *error) {
   (*vm)->DetachCurrentThread(vm);
 }
 
-const char **window_get_extensions(uint32_t *extension_count) {
+const char **window_vk_get_extensions(uint32_t *extension_count) {
   *extension_count = 2;
   static const char *extensions[] = {"VK_KHR_surface",
                                      "VK_KHR_android_surface"};
   return extensions;
 }
 
-VkSurfaceKHR window_create_surface(const VkInstance instance) {
+VkSurfaceKHR window_vk_create_surface(const VkInstance instance) {
   VkAndroidSurfaceCreateInfoKHR surface_info = {};
   surface_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
   surface_info.window = android_window_get_app()->window;
@@ -149,7 +149,7 @@ VkSurfaceKHR window_create_surface(const VkInstance instance) {
   return surface;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL window_debug_messenger_callback(
+VKAPI_ATTR VkBool32 VKAPI_CALL window_vk_debug_messenger_callback(
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
     VkDebugUtilsMessageTypeFlagsEXT message_type,
     const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
@@ -190,7 +190,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL window_debug_messenger_callback(
   return VK_FALSE;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL window_debug_report_callback(
+VKAPI_ATTR VkBool32 VKAPI_CALL window_vk_debug_report_callback(
     VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT object_type,
     uint64_t src_object, size_t location, int32_t message_code,
     const char *layer_prefix, const char *message, void *user_data) {
