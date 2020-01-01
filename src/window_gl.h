@@ -1,6 +1,6 @@
 #pragma once
 
-#include "window_desktop.h"
+#include "window.h"
 #include <glad/glad.h>
 
 void APIENTRY window_gl_debug_message_callback(GLenum source, GLenum type,

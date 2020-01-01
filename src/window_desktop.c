@@ -9,8 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <GLFW/glfw3.h>
-
 static const char *kFlapWindowTitle = "Flap";
 static const int kFlapWindowWidth = 800;
 static const int kFlapWindowHeight = 450;
@@ -63,6 +61,7 @@ void window_update() {
   thrust = 0;
   pause = 0;
   glfwPollEvents();
+  // glfwSwapBuffers(window);
 }
 
 void window_quit() {

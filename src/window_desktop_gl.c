@@ -8,6 +8,9 @@ static void on_resize(GLFWwindow *window, int width, int height) {
 }
 
 void window_init() {
+  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    window_fail_with_error("Failed to load OpenGL!");
+  }
   if (!glfwInit()) {
     window_fail_with_error("An error occurred while initializing GLFW.");
   }

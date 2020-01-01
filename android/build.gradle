@@ -6,7 +6,7 @@ buildscript {
     google()
   }
   dependencies {
-    classpath 'com.android.tools.build:gradle:3.4.2'
+    classpath 'com.android.tools.build:gradle:3.5.3'
   }
 }
 
@@ -33,6 +33,20 @@ android {
         debug {
           // Vulkan validation layers
           jniLibs.srcDir file(android.ndkDirectory.toString() + '/sources/third_party/vulkan/src/build-android/jniLibs')
+        }
+      }
+    }
+  }
+  flavorDimensions 'versions'
+  productFlavors {
+    vk {
+      applicationIdSuffix '.vk'
+    }
+    gl {
+      applicationIdSuffix '.gl'
+      externalNativeBuild {
+        cmake {
+          arguments "-DFLAP_USE_OPENGL=ON"
         }
       }
     }
