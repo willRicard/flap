@@ -54,10 +54,6 @@ void android_main(struct android_app *app) {
   main();
 }
 
-void window_quit() {
-  // No need to do anything: Android provides us with a window.
-}
-
 void window_update() {
   thrust = 0;
   pause = 0;

@@ -1,5 +1,6 @@
-#include "window_desktop.h"
 #include "window_gl.h"
+
+#include "window_desktop.h"
 
 #include <stdio.h>
 
@@ -8,9 +9,6 @@ static void on_resize(GLFWwindow *window, int width, int height) {
 }
 
 void window_init() {
-  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-    window_fail_with_error("Failed to load OpenGL!");
-  }
   if (!glfwInit()) {
     window_fail_with_error("An error occurred while initializing GLFW.");
   }
@@ -26,6 +24,10 @@ void window_init() {
                             FLAP_WINDOW_TITLE, NULL, NULL);
 
   glfwMakeContextCurrent(window);
+
+  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    window_fail_with_error("Failed to load OpenGL!");
+  }
 
   glfwSwapInterval(1);
 

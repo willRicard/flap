@@ -62,7 +62,7 @@ else() # Use OpenGL
       flap
       PUBLIC glad/include ${ANDROID_NDK}/sources/android/native_app_glue)
 
-    target_link_libraries(flap PUBLIC android log GLESv2)
+    target_link_libraries(flap PUBLIC android log EGL GLESv2)
 
   elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Emscripten")
     set(CMAKE_EXECUTABLE_SUFFIX ".html")

@@ -1,11 +1,6 @@
 #pragma once
 #include "window.h"
 
-// Including GLFW on Emscripten redefines all OpenGL symbols and macros.
-#ifdef __EMSCRIPTEN__
-#include <glad/glad.h>
-#endif
-
 #include <GLFW/glfw3.h>
 
 #define FLAP_WINDOW_TITLE "Flap"

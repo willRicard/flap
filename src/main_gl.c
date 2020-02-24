@@ -18,7 +18,7 @@ int main(void) {
 
   glClearColor(0.53f, 0.81f, 0.92f, 1.f);
 
-  if (!window_should_close()) {
+  while (!window_should_close()) {
     glClear(GL_COLOR_BUFFER_BIT);
 
     game_update();
@@ -26,12 +26,10 @@ int main(void) {
     sprite_update();
 
     window_update();
-  } else {
-    sprite_gl_quit();
-
-    window_quit();
-    exit(EXIT_SUCCESS);
   }
 
-  return 0;
+  sprite_gl_quit();
+
+  window_quit();
+  return EXIT_SUCCESS;
 }
