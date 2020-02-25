@@ -122,7 +122,7 @@ void sprite_update() {
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
   }
 
-  glUniform1i(texture, location_texture);
+  glUniform1i(location_texture, texture);
 
   glDrawElements(GL_TRIANGLES, 6 * (1 + 4 * FLAP_NUM_PIPES), GL_UNSIGNED_SHORT,
                  0);
