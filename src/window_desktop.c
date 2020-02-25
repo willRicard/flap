@@ -61,7 +61,9 @@ void window_update() {
   thrust = 0;
   pause = 0;
   glfwPollEvents();
-  // glfwSwapBuffers(window);
+#ifdef FLAP_USE_OPENGL
+  glfwSwapBuffers(window);
+#endif
 }
 
 void window_quit() {

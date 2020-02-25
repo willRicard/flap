@@ -113,6 +113,8 @@ else() # Use OpenGL
                    src/sprite_gl.c)
     target_include_directories(flap PUBLIC glad/include)
 
+    target_compile_definitions(flap PUBLIC FLAP_USE_OPENGL)
+
     target_link_libraries(flap PUBLIC OpenGL::GL glfw)
 
     if(NOT WIN32)
