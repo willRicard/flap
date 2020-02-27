@@ -6,13 +6,13 @@ buildscript {
     google()
   }
   dependencies {
-    classpath 'com.android.tools.build:gradle:3.5.3'
+    classpath 'com.android.tools.build:gradle:3.6.0'
   }
 }
 
 android {
   compileSdkVersion 29
-  buildToolsVersion "29.0.2"
+  buildToolsVersion "30-rc1"
   defaultConfig {
     applicationId 'eu.willricard.flap'
     minSdkVersion 24

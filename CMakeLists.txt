@@ -16,6 +16,7 @@ if(Vulkan_FOUND AND NOT FLAP_USE_OPENGL)
       src/assets_android.c
       src/assets_vk.c
       src/window_android.c
+      src/window_android_vk.c
       src/game.c
       src/sprite_vk.c)
 
