@@ -1,7 +1,13 @@
+#include "window_android.h"
+
 #include <android/log.h>
 
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_android.h>
+
+void window_init() {}
+
+void window_quit() {}
 
 const char **window_vk_get_extensions(uint32_t *extension_count) {
   *extension_count = 2;

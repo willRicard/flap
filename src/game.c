@@ -5,7 +5,6 @@
 
 #include "xoroshiro.h"
 
-#include "flap.h"
 #include "sprite.h"
 #include "window.h"
 
@@ -78,7 +77,7 @@ static float last_thrust = 0.F;
 
 static Sprite *bird = NULL;
 
-static Sprite *pipes[4 * FLAP_NUM_PIPES] = {NULL};
+static Sprite *pipes[kNumSprites] = {NULL};
 static int next_pipe = 0;
 static float pipe_gap = 0.F;
 
@@ -93,10 +92,10 @@ static void game_reset() {
   sprite_set_x(bird, kBirdX);
   sprite_set_y(bird, kBirdY);
 
-  for (int i = 0; i < 4 * FLAP_NUM_PIPES; i += 4) {
+  for (int i = 0; i < kSpritesPerPipe * kNumPipes; i += 4) {
     xoroshiro128plus(random_generator_state);
 
-    const float x = i / 4 * kPipeStep;
+    const float x = (i / kSpritesPerPipe) * kPipeStep;
     const float h = kMinPipeHeight + (float)random_generator_state[0] /
                                          UINT64_MAX *
                                          (kMaxPipeHeight - kMinPipeHeight);
@@ -147,7 +146,7 @@ void game_init() {
   sprite_set_w(bird, kBirdWidth);
   sprite_set_h(bird, kBirdHeight);
 
-  for (int i = 0; i < 4 * FLAP_NUM_PIPES; i += 4) {
+  for (int i = 0; i < kSpritesPerPipe * kNumPipes; i += 4) {
     // Top pipe body
     pipes[i] = sprite_new(kPipeBodyTextureX, kPipeBodyTextureY,
                           kPipeBodyTextureWidth, kPipeBodyTextureHeight);
@@ -169,7 +168,7 @@ void game_init() {
 }
 
 static void scroll_pipes(const float dt) {
-  for (int i = 0; i < 4 * FLAP_NUM_PIPES; i += 4) {
+  for (int i = 0; i < kSpritesPerPipe * kNumPipes; i += 4) {
     const float new_x = sprite_get_x(pipes[i + 1]) + kScrollSpeed * dt;
 
     sprite_set_x(pipes[i], new_x + kPipeBodyX);
@@ -239,7 +238,7 @@ void game_update() {
                    kScreenHeight - new_height - kPipeHeadHeight * kPipeWidth);
       sprite_set_th(pipes[next_pipe + 3], 2 * new_height / kPipeWidth);
 
-      next_pipe = (next_pipe + 4) % (4 * FLAP_NUM_PIPES);
+      next_pipe = (next_pipe + kSpritesPerPipe) % (kSpritesPerPipe * kNumPipes);
     }
 
     if (sprite_intersect(bird, pipes[next_pipe]) ||

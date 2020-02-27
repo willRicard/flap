@@ -5,8 +5,6 @@
 
 #include <GLFW/glfw3.h>
 
-#include "flap.h"
-
 void window_init() {
   if (!glfwInit()) {
     window_fail_with_error("An error occurred while initializing GLFW.");

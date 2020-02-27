@@ -6,7 +6,6 @@
 #include <string.h>
 
 #include "assets_vk.h"
-#include "flap.h"
 #include "game.h"
 #include "sprite_vk.h"
 #include "window_vk.h"

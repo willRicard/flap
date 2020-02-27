@@ -10,11 +10,6 @@
 int main(void) {
   window_init();
 
-  if (glad_glDebugMessageCallback) {
-    glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(window_gl_debug_message_callback, NULL);
-  }
-
   sprite_gl_init();
 
   glDisable(GL_DEPTH_TEST);

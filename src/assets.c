@@ -28,6 +28,7 @@ char *assets_base_read_file(const char *file_path, size_t *data_size) {
 #endif
 
   if (file == NULL) {
+    window_fail_with_error("Assets: Could not open file");
     return NULL;
   }
 
@@ -37,6 +38,7 @@ char *assets_base_read_file(const char *file_path, size_t *data_size) {
   char *data = NULL;
   data = (char *)malloc(size * sizeof(char));
   if (data == NULL) {
+    window_fail_with_error("Assets: Could not read file contents");
     return NULL;
   }
 
