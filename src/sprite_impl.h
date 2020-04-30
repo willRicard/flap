@@ -8,7 +8,7 @@ static const float kTextureHeight = 32.F;
 
 static unsigned int count = 0;
 
-static Sprite vertices[kNumPlayers + kSpritesPerPipe * kNumPipes];
+static Sprite vertices[kNumSprites];
 
 const unsigned short indices[] = {
     0,   1,   2,   2,   0,   3,   4,   5,   6,   6,   4,   7,   8,   9,   10,

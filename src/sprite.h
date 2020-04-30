@@ -1,10 +1,10 @@
 #ifndef FLAP_SPRITE_H
 #define FLAP_SPRITE_H
 
-static const int kNumPlayers = 1;
-static const int kSpritesPerPipe = 4;
-static const int kNumPipes = 4;
-static const int kNumSprites = kNumPlayers + kSpritesPerPipe * kNumPipes;
+#define kNumPlayers 1
+#define kSpritesPerPipe 4
+#define kNumPipes 4
+#define kNumSprites kNumPlayers + kSpritesPerPipe * kNumPipes
 
 /**
  * A sprite vertex.
