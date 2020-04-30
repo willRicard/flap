@@ -1,3 +1,8 @@
 build
 pipeline_cache.bin
 compile_commands.json
+flap.3dsx
+flap.elf
+flap.nacp
+flap.nro
+flap.smdh
