@@ -1,6 +1,12 @@
 #pragma once
 #include "sprite.h"
 
-void sprite_gl_init(void);
+/**
+ * Load shaders and resources.
+ */
+void sprite_init(void);
 
-void sprite_gl_quit(void);
+/**
+ * Free shaders and resources.
+ */
+void sprite_quit(void);

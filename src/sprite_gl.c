@@ -14,7 +14,7 @@ static GLuint vao = 0;
 
 static GLuint buffers[2] = {0};
 
-void sprite_gl_init() {
+void sprite_init() {
   // Detect which shader to use: OpenGL or OpenGL ES / WebGL
   const GLubyte *version = glGetString(GL_VERSION);
 
@@ -70,7 +70,7 @@ void sprite_gl_init() {
   glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
 }
 
-void sprite_gl_quit() {
+void sprite_quit() {
   glDeleteProgram(program);
 
   if (glad_glDeleteVertexArrays) {

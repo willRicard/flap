@@ -178,7 +178,7 @@ int main(void) {
   assets_vk_create_pipeline_cache(&device, "pipeline_cache.bin",
                                   &pipeline_cache);
 
-  sprite_vk_init(&device);
+  sprite_init(&device);
 
   create_pipelines();
 
@@ -212,7 +212,7 @@ int main(void) {
   vkDestroyPipeline(device.device, pipelines[0], NULL);
   vkDestroyPipeline(device.device, pipelines[1], NULL);
 
-  sprite_vk_quit(&device);
+  sprite_quit(&device);
 
   assets_vk_destroy_pipeline_cache(&device, pipeline_cache,
                                    "pipeline_cache.bin");

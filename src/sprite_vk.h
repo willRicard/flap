@@ -6,12 +6,12 @@
 /**
  * Load shaders and resources.
  */
-void sprite_vk_init(SulfurDevice *dev);
+void sprite_init(SulfurDevice *dev);
 
 /**
  * Free shaders and resources.
  */
-void sprite_vk_quit(SulfurDevice *device);
+void sprite_quit(SulfurDevice *device);
 
 /**
  * Build pipeline create info.

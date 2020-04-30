@@ -10,7 +10,7 @@
 int main(void) {
   window_init();
 
-  sprite_gl_init();
+  sprite_init();
 
   glDisable(GL_DEPTH_TEST);
 
@@ -28,7 +28,7 @@ int main(void) {
     window_update();
   }
 
-  sprite_gl_quit();
+  sprite_quit();
 
   window_quit();
   return EXIT_SUCCESS;

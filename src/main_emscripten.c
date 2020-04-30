@@ -1,9 +1,9 @@
 #include <stdlib.h>
-#include <emscripten/emscripten.h>
 
+#include <emscripten/emscripten.h>
 #include <glad/glad.h>
 
-#include "sprite_gl.h"
+#include "sprite.h"
 #include "window_gl.h"
 
 #include "game.h"
@@ -18,7 +18,7 @@ static void main_loop(void) {
 
     window_update();
   } else {
-    sprite_gl_quit();
+    sprite_quit();
 
     window_quit();
     exit(EXIT_SUCCESS);
@@ -36,7 +36,7 @@ int main(void) {
     glDebugMessageCallback(window_gl_debug_message_callback, NULL);
   }
 
-  sprite_gl_init();
+  sprite_init();
 
   glDisable(GL_DEPTH_TEST);
 

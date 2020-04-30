@@ -20,7 +20,7 @@ static SulfurShader sprite_shaders[2];
 static SulfurBuffer sprite_vertex_buffer = {0};
 static SulfurBuffer sprite_index_buffer = {0};
 
-void sprite_vk_init(SulfurDevice *dev) {
+void sprite_init(SulfurDevice *dev) {
   assets_vk_create_shader(dev, "shaders/sprite.vert.spv",
                           VK_SHADER_STAGE_VERTEX_BIT, &sprite_shaders[0]);
 
@@ -87,7 +87,7 @@ void sprite_vk_init(SulfurDevice *dev) {
   sulfur_buffer_destroy(dev, &tmp_buf);
 }
 
-void sprite_vk_quit(SulfurDevice *dev) {
+void sprite_quit(SulfurDevice *dev) {
   vkDeviceWaitIdle(dev->device);
 
   sulfur_buffer_destroy(dev, &sprite_vertex_buffer);
